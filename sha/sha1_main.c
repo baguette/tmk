@@ -49,7 +49,8 @@ void printDigestInHex(BYTE   digest[SHA1_DIGEST_LENGTH], const char* file)
 
     for(a = 0;a < SHA1_DIGEST_LENGTH;a++)
     {
-        printf("%x", digest[a]);
+
+        printf("%02x", digest[a]);
     }
 
     printf("  %s\n", file);
