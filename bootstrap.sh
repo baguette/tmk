@@ -20,5 +20,5 @@ run() {
  ;
  make)
 
-run $CC -o tmake $CFLAGS tmake.c jimtcl/libjim.a -lm
+run $CC -o tmake $CFLAGS -Ijimtcl tmake.c jimtcl/libjim.a -lm
 

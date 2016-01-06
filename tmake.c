@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "jimtcl/jim.h"
+#include <jim.h>
 
 int main(int argc, char **argv)
 {
