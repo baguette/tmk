@@ -1,0 +1,30 @@
+/usr/bin/tmake				(statically-linked core program)
+
+/usr/lib/tmake/cc.tcl		(modules)
+
+===============================================================================
+# Core
+param CC gcc
+
+set PROGNAME foo
+
+target compile {file1.c file2.c file3.c} {
+	foreach INPUT $INPUTS {
+		$CC -o [basename $INPUT].o $INPUT
+	}
+}
+
+target link {file1.o file2.o file3.o} {
+	$CC -o $PROGNAME $INPUTS
+}
+
+===============================================================================
+# With cc module
+package require cc
+
+set PROGNAME foo
+
+c-program $PROGNAME {file1.c file2.c file3.c}
+
+===============================================================================
+
