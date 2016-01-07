@@ -1,0 +1,16 @@
+# make
+
+* GNU make vs. BSD make: http://www.wgdd.de/2007/11/gnu-make-vs-bsd-make-practical-problem.html
+* Portable Make Programming: http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Make
+* FreeBSD's make: http://www.khmere.com/freebsd_book/html/ch01.html
+* NetBSD make: https://wiki.netbsd.org/bsd_make/
+* GNU make Manual: http://www.gnu.org/software/make/manual/make.html
+
+# Related tools
+
+* OMake: http://projects.camlcity.org/projects/omake.html
+* Lake - a Lua-based Build Tool: https://github.com/stevedonovan/Lake
+* Rake - Ruby Make: http://rake.rubyforge.org/
+* SCons: http://www.scons.org/
+* autosetup - Tcl-based autoconf replacement: https://msteveb.github.io/autosetup/
+
