@@ -1,6 +1,6 @@
-/usr/bin/tmake				(statically-linked core program)
+/usr/bin/tmake                   (statically-linked core program)
 
-/usr/lib/tmake/cc.tcl		(modules)
+/usr/lib/tmake/packages/cc.tcl   (modules)
 
 ===============================================================================
 # Core
@@ -8,14 +8,17 @@ param CC gcc
 
 set PROGNAME foo
 
-target compile {file1.c file2.c file3.c} {
-	foreach INPUT $INPUTS {
-		$CC -o [basename $INPUT].o $INPUT
-	}
+proc c-file {o-file file headers} {
+  rule $o-file [lappend $headers file] {
+    exec $CC -o $TARGET -c $file
+  }
 }
 
-target link {file1.o file2.o file3.o} {
-	$CC -o $PROGNAME $INPUTS
+c-file file1.o file1.c {foo.h bar.h}
+c-file file2.o file2.c {foo.h bar.h}
+
+rule $PROGNAME {file1.o file2.o} {
+  exec $CC -o $TARGET $INPUTS
 }
 
 ===============================================================================
@@ -24,7 +27,7 @@ package require cc
 
 set PROGNAME foo
 
-c-program $PROGNAME {file1.c file2.c file3.c}
+c-program $PROGNAME {file1.c file2.c}
 
 ===============================================================================
 
