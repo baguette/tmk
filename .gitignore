@@ -1,8 +1,18 @@
-
+# Binary Ignores
 **/*.o
 **/*.a
 tmake
 
 
+# Swap Ignores (vim)
 **/*.swp
 **/*~
+
+
+# Testing Ignores
+sa_test_crypto
+
+
+# OSX Specific Ignores
+**/*.dSYM*
+**/.DS_Store

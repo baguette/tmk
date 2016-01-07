@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "sha1.h"
+#include "../../tm_crypto.h"
 
 #define USAGE_ERROR -1
 #define FILE_ERROR -2

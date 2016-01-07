@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Building sa_test_crypto..."
+cc -o sa_test_crypto sa_test_crypto.c ../../tm_crypto.c

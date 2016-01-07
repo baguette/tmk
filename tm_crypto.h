@@ -7,11 +7,17 @@
 * Details:    	Defines the API for the corresponding SHA1 implementation.
 *********************************************************************/
 
-#ifndef SHA1_H
-#define SHA1_H
+#ifndef TM_CRYPTO_H
+#define TM_CRYPTO_H
 
 /*************************** HEADER FILES ***************************/
 #include <stddef.h>
+
+/****************** HIGHER LEVEL CRYPTO FUNCTIONS *******************/
+
+// TODO : Functions that TMake will use to cache dependancies
+
+
 
 /****************************** MACROS ******************************/
 #define SHA1_BLOCK_LENGTH	64
