@@ -363,6 +363,17 @@ int main(int argc, char **argv)
 		wrap(interp, Jim_Eval(interp, "set TM_SILENT_MODE 1"));
 	}
 
+	goal = goal ? goal : tm_goal;
+
+	if (goal) {
+		char *fmt = "set TM_CURRENT_GOAL %s";
+		char *cmd = NULL;
+		
+		cmd = malloc(strlen(fmt) + strlen(goal) + 1);
+		sprintf(cmd, fmt, goal);
+		wrap(interp, Jim_Eval(interp, cmd));
+	}
+
 	/* TMakefile evaluation */
 	if (file_exists(filename)) {
 		wrap(interp, Jim_EvalFile(interp, filename));

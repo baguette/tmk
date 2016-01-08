@@ -47,7 +47,15 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	tm_rules = rule_cons(rule, tm_rules);
 
 	if (tm_goal == NULL) {
+		const char *fmt_set = "set TM_CURRENT_GOAL %s";
+
 		tm_goal = target;
+
+		len = strlen(fmt_set) + strlen(target) + 1;
+		cmd = malloc(len);
+		sprintf(cmd, fmt_set, target);
+		Jim_Eval(interp, cmd);
+		free(cmd);
 	}
 
 	len = strlen(fmt) + strlen(target) + (recipe ? strlen(recipe) : 0) + 1;
@@ -105,10 +113,33 @@ static int cryptoHashFile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return (JIM_OK);
 }
 
+static int targetCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	char *target = NULL;
+
+	if (argc != 2) {
+		Jim_WrongNumArgs(interp, 1, argv, "target name");
+		return (JIM_ERR);
+	}
+
+	target = target_copy(Jim_String(argv[1]));
+
+	if (target_exists(target, get_targets(tm_rules))) {
+		Jim_SetResultInt(interp, 1);
+	} else {
+		Jim_SetResultInt(interp, 0);
+	}
+
+	free(target);
+
+	return (JIM_OK);
+}
+
 
 void tm_RegisterCoreCommands(Jim_Interp *interp)
 {
 	Jim_CreateCommand(interp, "rule", ruleCmd, NULL, NULL);
+	Jim_CreateCommand(interp, "target", targetCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "hash-string", cryptoHashString, NULL, NULL);
 	Jim_CreateCommand(interp, "hash-file", cryptoHashFile, NULL, NULL);
 }

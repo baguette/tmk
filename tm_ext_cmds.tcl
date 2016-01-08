@@ -8,6 +8,26 @@ proc defined {var} {
 	}
 }
 
+# True if target is the current goal
+proc make {target} {
+	global TM_CURRENT_GOAL
+
+	if {"$target" eq "$TM_CURRENT_GOAL"} {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+# True if operand is the empty string
+proc empty {operand} {
+	if {[string length $operand]} {
+		return 0
+	} else {
+		return 1
+	}
+}
+
 # Check if an array a contains a value for key
 proc array_has {a key} {
 	global $a
