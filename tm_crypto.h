@@ -40,4 +40,7 @@ void tm_CryptoHashData(const unsigned char* data, unsigned char digest[CRYPTO_HA
 void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE]);
 void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], char hash[CRYPTO_HASH_STRING_LENGTH]);
 
+#define TM_CRYPTO_HASH_DATA(DATA, DIGEST)       tm_CryptoHashData((const unsigned char*)(DATA), (unsigned char*)(DIGEST))
+#define TM_CRYPTO_HASH_FILE(FILE, DIGEST)       tm_CryptoHashFile((const char*)(FILE), (unsigned char*)(DIGEST))
+#define TM_CRYPTO_HASH_TO_STRING(DIGEST, HASH)  tm_CryptoHashToString((const unsigned char*)(DIGEST), (char*)(HASH))
 #endif
