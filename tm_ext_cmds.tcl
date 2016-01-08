@@ -51,3 +51,65 @@ proc options {str} {
 	return $TRIMOPTS
 }
 
+rename exec tcl::exec
+
+proc exec args {
+	global TM_PARAMS
+	set flags ""
+	set echo 1
+	set errexit 1
+	set noexec 0
+	set start 0
+
+	if {[array_has TM_PARAMS TM_NO_EXECUTE]} {
+		set noexec $TM_PARAMS(TM_NO_EXECUTE)
+	}
+
+	if {[llength args] == 0} {
+		return "";
+	}
+
+	if {[lindex args 0] == "-flags"} {
+		set flags [lindex args 1]
+		set start 2
+	}
+
+	for {set i 0} {$i < [string length $flags]} {incr i} {
+		switch [string index $i] {
+			"@" {set echo 0}
+			"-" {set errexit 0}
+			"+" {set noexec 0}
+		}
+	}
+
+	set rest [lrange $args $start end]
+	
+	if {$echo} {
+		puts "$rest"
+		flush stdout
+	}
+
+	if {$noexec} {
+		return ""
+	}
+
+	set status 0
+	set stdout ""
+	try {
+		set stdout [tcl::exec {*}$rest]
+		set status 0
+	} on CHILDSTATUS {results options} {
+		set status [lindex [dict get $options -errorcode] 2]
+	}
+
+	if {$status != 0} {
+		if {$errexit} {
+			error "exec returned non-zero return code: $status\n$stdout"
+		}
+	}
+
+	if {[string length $stdout]} {
+		puts $stdout
+	}
+}
+

@@ -250,8 +250,9 @@ void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
 				free(inputs);
 				update(rule->target);
 				rule->type = TM_UPDATED;
+				printf("\n");
 			} else {
-				printf("Target %s is up to date\n", rule->target);
+				printf("Target %s is up to date\n\n", rule->target);
 			}
 		} else if (rule->type == TM_FILENAME) {
 			/* Check that the file actually exists */

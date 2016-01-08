@@ -13,14 +13,12 @@ param JIMFLAGS = [options { --disable-lineedit
 proc cc args {
 	global CC CFLAGS
 
-	puts "$CC $CFLAGS $args"
-	puts [exec $CC {*}$CFLAGS {*}$args]
+	exec $CC {*}$CFLAGS {*}$args
 }
 
 proc make-c-ext {tclfile cfile} {
 	global MAKE_C_EXT
 
-	puts "$MAKE_C_EXT $tclfile > $cfile"
 	exec echo "#define JIM_EMBEDDED" > $cfile
 	exec {*}$MAKE_C_EXT $tclfile >> $cfile
 }
@@ -30,16 +28,9 @@ rule all {tmake}
 rule jim {} {
 	global JIMFLAGS
 
-	puts "cd jimtcl"
 	cd jimtcl
-
-	puts "./configure $JIMFLAGS"
-	puts [exec ./configure {*}$JIMFLAGS]
-
-	puts "make"
-	puts [exec make]
-
-	puts "cd .."
+	exec ./configure {*}$JIMFLAGS
+	exec make
 	cd .. 
 }
 
@@ -52,6 +43,6 @@ rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
 rule tmake {jim $C_SRC} {
 	global C_SRC
 
-	cc -o tmake -Ijimtcl {*}$C_SRC jimtcl/libjim.a -lm
+	cc -o $TARGET -Ijimtcl {*}$C_SRC jimtcl/libjim.a -lm
 }
 
