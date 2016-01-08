@@ -7,9 +7,11 @@
 #include <jim.h>
 
 #include "tm_target.h"
+#include "tm_crypto.h"
 #include "tm_core_cmds.h"
 #include "tm_ext_cmds.h"
 
+#define TM_CACHE ".tmcache"
 #define DEFAULT_FILE "TMakefile"
 
 int file_exists(const char *filename)
@@ -57,8 +59,102 @@ char *get(int arg, int argc, char **argv)
 	return NULL;
 }
 
-void wrap(Jim_Interp *interp, int error)
+int needs_update(char *target)
 {
+	char *cachefile = NULL;
+	unsigned char digest[CRYPTO_HASH_SIZE];
+	char oldhash[CRYPTO_HASH_STRING_LENGTH];
+	char newhash[CRYPTO_HASH_STRING_LENGTH];
+	tm_rule *rule = NULL;
+
+	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
+	sprintf(cachefile, TM_CACHE "/%s", target);
+
+	rule = find_rule(target, tm_rules);
+
+	if (rule) {
+		if (file_exists(cachefile)) {
+			FILE *fp = NULL;
+
+			fp = fopen(cachefile, "r");
+			fread(oldhash, 1, CRYPTO_HASH_STRING_LENGTH, fp);
+			fclose(fp);
+			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
+
+			tm_CryptoHashData(rule->recipe, digest);
+			tm_CryptoHashToString(digest, newhash);
+
+			if (strcmp(oldhash, newhash) != 0) {
+				goto no;
+			}
+		} else {
+			goto yes;
+		}
+	} else {
+		/* assume it's a file */
+		if (file_exists(cachefile)) {
+			FILE *fp = NULL;
+			
+			fp = fopen(cachefile, "r");
+			fread(oldhash, 1, CRYPTO_HASH_STRING_LENGTH, fp);
+			fclose(fp);
+			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
+
+			tm_CryptoHashFile(target, digest);
+			tm_CryptoHashToString(digest, newhash);
+
+			if (strcmp(oldhash, newhash) != 0) {
+				goto no;
+			}
+		} else {
+			goto yes;
+		}
+	}
+
+	no:
+		free(cachefile);
+		return 0;
+	yes:
+		free(cachefile);
+		return 1;
+}
+
+int update(char *target)
+{
+	char *cachefile = NULL;
+	unsigned char digest[CRYPTO_HASH_SIZE];
+	char newhash[CRYPTO_HASH_STRING_LENGTH];
+	tm_rule *rule = NULL;
+
+	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
+	sprintf(cachefile, TM_CACHE "/%s", target);
+
+	rule = find_rule(target, tm_rules);
+
+	if (rule) {
+		FILE *fp = NULL;
+
+		tm_CryptoHashData(rule->recipe, digest);
+		tm_CryptoHashToString(digest, newhash);
+
+		fp = fopen(cachefile, "w");
+		fwrite(newhash, 1, strlen(newhash), fp);
+		fclose(fp);
+	} else {
+		/* assume it's a file */
+		FILE *fp = NULL;
+
+		tm_CryptoHashFile(target, digest);
+		tm_CryptoHashToString(digest, newhash);
+
+		fp = fopen(cachefile, "w");
+		fwrite(newhash, 1, strlen(newhash), fp);
+		fclose(fp);
+	}
+}
+
+
+void wrap(Jim_Interp *interp, int error) {
 	if (error == JIM_ERR) {
 		Jim_MakeErrorMessage(interp);
 		fprintf(stderr, "%s\n", Jim_String(Jim_GetResult(interp)));
@@ -70,6 +166,7 @@ void wrap(Jim_Interp *interp, int error)
 int main(int argc, char **argv)
 {
 	const char *filename = DEFAULT_FILE;
+	char *goal = NULL;
 	int silent = 0;
 	int force_update = 0;
 	int no_execute = 0;
@@ -115,8 +212,8 @@ int main(int argc, char **argv)
 			}
 		} else if (strstr(argv[i], "=")) {
 			parameters = target_cons(argv[i], parameters);
-		} else if (filename == DEFAULT_FILE) {
-			filename = argv[i];
+		} else if (goal == NULL) {
+			goal = argv[i];
 		} else {
 			usage(argc, argv);
 		}
@@ -139,14 +236,27 @@ int main(int argc, char **argv)
 		char *var = strtok(parameters->name, "=");
 		char *val = strtok(NULL, "\0");
 
-		char buf[1024];
-
-		snprintf(buf, 1024, "set {TM_PARAM(%s)} {%s}", var, val);
-		buf[1023] = '\0';
+		char *buf = NULL;
+		int len = strlen(var) + strlen(val) + strlen("set {TM_PARAM()} {}") + 1;
+		buf = malloc(len);
+		sprintf(buf, "set {TM_PARAM(%s)} {%s}", var, val);
 
 		wrap(interp, Jim_Eval(interp, buf));
-		
+
+		free(buf);
 		parameters = parameters->next;
+	}
+
+	if (env_lookup) {
+		wrap(interp, Jim_Eval(interp, "set TM_ENV_LOOKUP 1"));
+	}
+
+	if (no_execute) {
+		wrap(interp, Jim_Eval(interp, "set TM_NO_EXECUTE 1"));
+	}
+
+	if (silent) {
+		wrap(interp, Jim_Eval(interp, "set TM_SILENT_MODE 1"));
 	}
 
 	/* TMakefile evaluation */
@@ -157,12 +267,19 @@ int main(int argc, char **argv)
 		retval = EXIT_FAILURE;
 	}
 
-	sorted_rules = topsort(tm_goal, tm_rules);
+	wrap(interp, Jim_Eval(interp, "file mkdir " TM_CACHE));
+
+	sorted_rules = topsort(goal ? goal : tm_goal, tm_rules);
 
 	while (sorted_rules) {
 		printf("Making target %s:\n", sorted_rules->rule->target);
-		if (sorted_rules->rule->recipe) {
+		if (sorted_rules->rule->recipe
+		&& (needs_update(sorted_rules->rule->target)
+		||  force_update)) {
 			wrap(interp, Jim_Eval(interp, sorted_rules->rule->recipe));
+			update(sorted_rules->rule->target);
+		} else {
+			printf("Nothing to be done for %s\n", sorted_rules->rule->target);
 		}
 		sorted_rules = sorted_rules->next;
 	}

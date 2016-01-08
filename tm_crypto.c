@@ -102,13 +102,13 @@ void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE])
     sha1_final(&sha_ctx, digest);
 }
 
-void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH])
+void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], char hash[CRYPTO_HASH_STRING_LENGTH])
 {
 	int i;
-	unsigned char *p = hash;
+	char *p = hash;
 
 	for (i = 0; i < 20; i++) {
-		p += sprintf((char*)p, "%02x", digest[i]);
+		p += sprintf(p, "%02x", digest[i]);
 	}
 }
 

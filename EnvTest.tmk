@@ -1,0 +1,7 @@
+
+param PATH = /usr
+
+rule test {} {
+	puts "$PATH"
+}
+

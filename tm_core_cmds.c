@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 #define JIM_EMBEDDED
 #include <jim.h>
@@ -46,9 +47,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 /* Crypto hash of string interface to jimtcl */
 static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	unsigned char hash[CRYPTO_HASH_STRING_LENGTH];
+	char hash[CRYPTO_HASH_STRING_LENGTH];
 	unsigned char digest[CRYPTO_HASH_SIZE];
-	const unsigned char *string = NULL;
+	const char *string = NULL;
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "hash-string string");
@@ -70,9 +71,9 @@ static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int cryptoHashFile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	unsigned char hash[CRYPTO_HASH_STRING_LENGTH];
+	char hash[CRYPTO_HASH_STRING_LENGTH];
 	unsigned char digest[CRYPTO_HASH_SIZE];
-	const unsigned char *filename = NULL;
+	const char *filename = NULL;
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "hash-file filename");

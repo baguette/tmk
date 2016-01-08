@@ -38,6 +38,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void tm_CryptoHashData(const unsigned char* data, unsigned char digest[CRYPTO_HASH_SIZE]);
 void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE]);
-void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH]);
+void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], char hash[CRYPTO_HASH_STRING_LENGTH]);
 
 #endif

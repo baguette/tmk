@@ -29,7 +29,9 @@ tm_rule *new_rule(char *target, target_list *deps, char *recipe);
 target_list *target_cons(char *name, target_list *next);
 tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next);
 
+int target_exists(char *target, tm_rule_list *rules);
 tm_rule *find_rule(char *name, tm_rule_list *rules);
+tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules);
 
 tm_rule_list *topsort(char *target, tm_rule_list *rules);
 

@@ -87,6 +87,21 @@ void free_rule_list(tm_rule_list *rules)
 }
 
 
+int target_exists(char *target, tm_rule_list *rules)
+{
+	tm_rule_list *node = rules;
+
+	while (node) {
+		if (strcmp(node->rule->target, target) == 0) {
+			return 1;
+		}
+		node = node->next;
+	}
+
+	return 0;
+}
+
+
 tm_rule *find_rule(char *target, tm_rule_list *rules)
 {
 	tm_rule_list *node = rules;
