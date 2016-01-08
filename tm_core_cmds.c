@@ -4,6 +4,7 @@
 
 #include "tm_target.h"
 #include "tm_core_cmds.h"
+#include "tm_crypto.h"
 
 static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -17,9 +18,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		Jim_WrongNumArgs(interp, 2, argv, "rule target-list dep-list ?script?");
 		return (JIM_ERR);
 	}
-	
+
 	target = target_copy(Jim_String(argv[1]));
-	
+
 	if (argc == 4) {
 		recipe = target_copy(Jim_String(argv[3]));
 	}
@@ -42,8 +43,56 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return (JIM_OK);
 }
 
+/* Crypto hash of string interface to jimtcl */
+static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	unsigned char hash[CRYPTO_HASH_STRING_LENGTH];
+	unsigned char digest[CRYPTO_HASH_SIZE];
+	const unsigned char *string = NULL;
+
+	if (argc != 2) {
+		Jim_WrongNumArgs(interp, 1, argv, "hash-string string");
+		return (JIM_ERR);
+	}
+
+	string = Jim_String(argv[1]);
+
+	tm_CryptoHashData(string, digest);
+	tm_CryptoHashToString(digest, hash);
+
+	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
+
+	return (JIM_OK);
+}
+
+
+/* Crypto hash of file interface to jimtcl */
+
+static int cryptoHashFile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+	unsigned char hash[CRYPTO_HASH_STRING_LENGTH];
+	unsigned char digest[CRYPTO_HASH_SIZE];
+	const unsigned char *filename = NULL;
+
+	if (argc != 2) {
+		Jim_WrongNumArgs(interp, 1, argv, "hash-file filename");
+		return (JIM_ERR);
+	}
+
+	filename = Jim_String(argv[1]);
+
+	tm_CryptoHashFile(filename, digest);
+	tm_CryptoHashToString(digest, hash);
+
+	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
+
+	return (JIM_OK);
+}
+
+
 void tm_RegisterCoreCommands(Jim_Interp *interp)
 {
 	Jim_CreateCommand(interp, "rule", ruleCmd, NULL, NULL);
+	Jim_CreateCommand(interp, "hash-string", cryptoHashString, NULL, NULL);
+	Jim_CreateCommand(interp, "hash-file", cryptoHashFile, NULL, NULL);
 }
-
