@@ -72,7 +72,11 @@ int needs_update(char *target)
 
 	rule = find_rule(target, tm_rules);
 
-	if (rule) {
+	if (!rule) {
+		goto yes;
+	}
+
+	if (rule->type == TM_EXPLICIT) {
 		if (file_exists(cachefile)) {
 			FILE *fp = NULL;
 
@@ -84,14 +88,15 @@ int needs_update(char *target)
 			TM_CRYPTO_HASH_DATA(rule->recipe, digest);
 			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
-			if (strcmp(oldhash, newhash) != 0) {
+			if (strcmp(oldhash, newhash) == 0) {
 				goto no;
+			} else {
+				goto yes;
 			}
 		} else {
 			goto yes;
 		}
-	} else {
-		/* assume it's a file */
+	} else if (rule->type == TM_FILENAME) {
 		if (file_exists(cachefile)) {
 			FILE *fp = NULL;
 
@@ -103,8 +108,10 @@ int needs_update(char *target)
 			TM_CRYPTO_HASH_FILE(target, digest);
 			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
-			if (strcmp(oldhash, newhash) != 0) {
+			if (strcmp(oldhash, newhash) == 0) {
 				goto no;
+			} else {
+				goto yes;
 			}
 		} else {
 			goto yes;
@@ -119,6 +126,19 @@ int needs_update(char *target)
 		return 1;
 }
 
+target_list *need_update(target_list *targets)
+{
+	target_list *oodate = NULL;
+
+	for (targets = targets; targets; targets = targets->next) {
+		if (needs_update(targets->name)) {
+			oodate = target_cons(targets->name, oodate);
+		}
+	}
+
+	return oodate;
+}
+
 int update(char *target)
 {
 	char *cachefile = NULL;
@@ -130,8 +150,12 @@ int update(char *target)
 	sprintf(cachefile, TM_CACHE "/%s", target);
 
 	rule = find_rule(target, tm_rules);
+	
+	if (!rule) {
+		return (JIM_ERR);
+	}
 
-	if (rule) {
+	if (rule->type == TM_EXPLICIT) {
 		FILE *fp = NULL;
 
 		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
@@ -140,7 +164,7 @@ int update(char *target)
 		fp = fopen(cachefile, "w");
 		fwrite(newhash, 1, strlen(newhash), fp);
 		fclose(fp);
-	} else {
+	} else if (rule->type == TM_FILENAME) {
 		/* assume it's a file */
 		FILE *fp = NULL;
 
@@ -288,19 +312,37 @@ int main(int argc, char **argv)
 	while (sorted_rules) {
 		if (sorted_rules->rule->type == TM_EXPLICIT) {
 			printf("Making target %s:\n", sorted_rules->rule->target);
+			/* If the rule has a recipe and needs an update */
 			if (sorted_rules->rule->recipe
 			&& (force_update
-			||  needs_update(sorted_rules->rule->target))) {
-				wrap(interp, Jim_Eval(interp, sorted_rules->rule->recipe));
+			||  needs_update(sorted_rules->rule->target)))
+			{
+				/* Execute the recipe for the current rule */
+				const char *fmt = "recipe::%s {%s} {%s} {%s}";
+				int len = 0;
+				char *cmd = NULL;
+				char *target = sorted_rules->rule->target;
+				char *inputs = target_list_to_string(sorted_rules->rule->deps);
+				char *oodate = target_list_to_string(need_update(sorted_rules->rule->deps));
+
+				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
+				cmd = malloc(len);
+				sprintf(cmd, fmt, target, target, inputs, oodate);
+				wrap(interp, Jim_Eval(interp, cmd));
+				free(cmd);
+				free(oodate);
+				free(inputs);
 				update(sorted_rules->rule->target);
 			} else {
 				printf("Nothing to be done for %s\n", sorted_rules->rule->target);
 			}
 		} else if (sorted_rules->rule->type == TM_FILENAME) {
+			/* Check that the file actually exists */
 			if (!file_exists(sorted_rules->rule->target)) {
 				fprintf(stderr, "ERROR: Unable to find rule for target %s", sorted_rules->rule->target);
 				exit(EXIT_FAILURE);
 			}
+			update(sorted_rules->rule->target);
 		}
 		sorted_rules = sorted_rules->next;
 	}

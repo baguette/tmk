@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #define JIM_EMBEDDED
 #include <jim.h>
@@ -14,6 +15,11 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	char *target = NULL;
 	char *recipe = NULL;
 	int i, numdeps;
+	const char *fmt = "proc recipe::%s {TARGET INPUTS OODATE} { \
+	%s\
+	}";
+	int len = 0;
+	char *cmd = NULL;
 
 	if (argc < 3 || argc > 4) {
 		Jim_WrongNumArgs(interp, 2, argv, "rule target-list dep-list ?script?");
@@ -40,6 +46,12 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (tm_goal == NULL) {
 		tm_goal = target;
 	}
+
+	len = strlen(fmt) + strlen(target) + strlen(recipe) + 1;
+	cmd = malloc(len);
+	sprintf(cmd, fmt, target, recipe);
+	Jim_Eval(interp, cmd);
+	free(cmd);
 
 	return (JIM_OK);
 }

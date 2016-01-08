@@ -51,6 +51,7 @@ void deep_free_target_list(target_list *targets);
 void free_rule_list(tm_rule_list *rules);
 void deep_free_rule_list(tm_rule_list *rules);
 
+char *target_list_to_string(target_list *targets);
 void print_rule_list(tm_rule_list *rules);
 
 extern char *tm_goal;

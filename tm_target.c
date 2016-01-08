@@ -230,6 +230,34 @@ char *target_copy(const char *target)
 	return ret;
 }
 
+char *target_list_to_string(target_list *targets)
+{
+	target_list *node = targets;
+	int len = 0;
+	char *str = NULL;
+	char *p = NULL;
+
+	if (!targets) {
+		str = malloc(1);
+		str[0] = '\0';
+		return str;
+	}
+
+	for (node = targets; node; node = node->next) {
+		len += strlen(node->name) + 1;
+	}
+
+	str = malloc(len);
+	p = str;
+	for (node = targets; node; node = node->next) {
+		p += sprintf(p, "%s ", node->name);
+	}
+	*(p-1) = '\0';   /* get rid of the trailing space */
+
+	return str;
+}
+
+
 void print_rule_list(tm_rule_list *rules)
 {
 	tm_rule_list *node = rules;

@@ -1,6 +1,6 @@
 
-rule test {} {
-	set hash [hash-file tmake.c]
-	puts "$hash  tmake.c"
+rule test {tmake.c} {
+	set hash [hash-file $INPUTS]
+	puts "$hash  $INPUTS"
 }
 
