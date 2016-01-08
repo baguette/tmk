@@ -149,13 +149,26 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 	return 0;
 }
 
-static tm_rule_list *topsort_reverse(tm_rule_list *rules)
+tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 {
 	tm_rule_list *rev = NULL;
 	tm_rule_list *node = rules;
 
 	while (node) {
 		rev = rule_cons(node->rule, rev);
+		node = node->next;
+	}
+
+	return rev;
+}
+
+target_list *target_list_reverse(target_list *targets)
+{
+	target_list *rev = NULL;
+	target_list *node = targets;
+
+	while (node) {
+		rev = target_cons(node->name, rev);
 		node = node->next;
 	}
 
@@ -188,7 +201,7 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules)
 			break;
 	}
 
-	rev = topsort_reverse(sorted);
+	rev = rule_list_reverse(sorted);
 	free_rule_list(sorted);
 	return rev;
 }

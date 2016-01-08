@@ -4,6 +4,10 @@
 tmake
 
 
+# Generated code
+tm_ext_cmds.c
+
+
 # Swap Ignores (vim)
 **/*.swp
 **/*~

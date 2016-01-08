@@ -35,6 +35,9 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules);
 
 char *target_copy(const char *target);
 
+tm_rule_list *rule_list_reverse(tm_rule_list *rules);
+target_list *target_list_reverse(target_list *targets);
+
 void free_rule(tm_rule *rule);
 void free_target_list(target_list *targets);
 void deep_free_target_list(target_list *targets);

@@ -20,6 +20,11 @@ run() {
  ;
  make)
 
-TMAKE_SRC="tmake.c tm_crypto.c tm_target.c tm_core_cmds.c"
+C_SRC="tmake.c tm_crypto.c tm_target.c tm_core_cmds.c tm_ext_cmds.c"
 
-run $CC -o tmake $CFLAGS -Ijimtcl $TMAKE_SRC jimtcl/libjim.a -lm
+MAKE_C_EXT="jimtcl/jimsh jimtcl/make-c-ext.tcl tm_ext_cmds.tcl"
+echo "$MAKE_C_EXT > tm_ext_cmds.c"
+echo "#define JIM_EMBEDDED" > tm_ext_cmds.c
+$MAKE_C_EXT >> tm_ext_cmds.c
+
+run $CC -o tmake $CFLAGS -Ijimtcl $C_SRC jimtcl/libjim.a -lm
