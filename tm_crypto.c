@@ -1,18 +1,117 @@
 /*********************************************************************
-* Filename:   sha1.c
-* Author:     Brad Conte (brad AT bradconte.com)
+* Filename:   	sha1.c
+* Author:     	Brad Conte (brad AT bradconte.com)
+* Modified by:	Andre Schalkwyk (avs.aswyk AT gmail.com) 2016-01-05
 * Copyright:
-* Disclaimer: This code is presented "as is" without any guarantees.
-* Details:    Implementation of the SHA1 hashing algorithm.
-              Algorithm specification can be found here:
-               * http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf
-              This implementation uses little endian byte order.
+* Disclaimer: 	This code is presented "as is" without any guarantees.
+* Details:    	Implementation of the SHA1 hashing algorithm.
+              	Algorithm specification can be found here:
+               	* http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf
+              	This implementation uses little endian byte order.
 *********************************************************************/
 
 /*************************** HEADER FILES ***************************/
 #include <stdlib.h>
+#include <stdio.h>
 #include <memory.h>
+#include <string.h>
+
 #include "tm_crypto.h"
+
+
+/****************************** MACROS ******************************/
+#define SHA1_BLOCK_LENGTH	64
+#define SHA1_DIGEST_LENGTH	20			// SHA1 outputs a 20 byte digest
+
+/**************************** DATA TYPES ****************************/
+typedef unsigned char BYTE;             // 8-bit byte
+typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+
+typedef struct {
+	BYTE data[64];
+	WORD datalen;
+	unsigned long long bitlen;
+	WORD state[5];
+	WORD k[4];
+} SHA1_CTX;
+
+/*********************** FUNCTION DECLARATIONS **********************/
+void sha1_init(SHA1_CTX *ctx);
+void sha1_update(SHA1_CTX *ctx, const BYTE data[], size_t len);
+void sha1_final(SHA1_CTX *ctx, BYTE hash[]);
+
+
+/****************** HIGHER LEVEL CRYPTO FUNCTIONS *******************/
+void tm_crypto_hash_data(const unsigned char* data, unsigned char digest[20])
+{
+    BYTE        buff[SHA1_BLOCK_LENGTH];
+	BYTE*		pBuff;
+    int         bytesRead;
+	int			bytesLeft;
+	int			len;
+
+    /* Context to hold SHA1 hash */
+    SHA1_CTX     sha_ctx;
+
+	pBuff = (unsigned char*)&data[0];
+	len = strlen((char*)data);
+
+    /* Initialize SHA1 Context */
+    sha1_init(&sha_ctx);
+
+	while(pBuff < data + len)
+    {
+		bytesLeft = strlen((const char*)pBuff);
+
+		strncpy((char*)buff, (char*)pBuff, bytesLeft < SHA1_BLOCK_LENGTH ? bytesLeft : SHA1_BLOCK_LENGTH);
+
+		sha1_update(&sha_ctx, buff, bytesLeft < SHA1_BLOCK_LENGTH ? bytesLeft : SHA1_BLOCK_LENGTH);
+
+		pBuff += SHA1_BLOCK_LENGTH;
+    }
+
+    /* Finalize SHA1 Context */
+    sha1_final(&sha_ctx, digest);
+}
+
+void tm_crypto_hash_file(const char* file, unsigned char digest[20])
+{
+	/* File Handle */
+    FILE*       fp = NULL;
+	/* buffer to store unhashed datya */
+    BYTE        buff[SHA1_BLOCK_LENGTH];
+	/* How many bytes we have read from */
+    int         bytesRead;
+    /* Context to hold SHA1 hash */
+    SHA1_CTX     sha_ctx;
+
+    /* Initialize SHA1 Context */
+    sha1_init(&sha_ctx);
+
+    if((fp = fopen(file, "r")) == NULL) {
+        printf("File %s could not be opened\n", file);
+        exit(TM_CRYPTO_FILE_ERROR);
+    }
+
+    while((bytesRead = fread(buff, 1, SHA1_BLOCK_LENGTH, fp)) != 0)
+    {
+        /* Update SHA1 Context with block of data that was read */
+        sha1_update(&sha_ctx, buff, bytesRead);
+    }
+
+    /* Finalize SHA1 Context */
+    sha1_final(&sha_ctx, digest);
+}
+
+void tm_crypto_hash_to_string(const unsigned char digest[20], unsigned char hash[41])
+{
+	int i;
+	unsigned char *p = hash;
+
+	for (i = 0; i < 20; i++) {
+		p += sprintf((char*)p, "%02x", digest[i]);
+	}
+}
 
 /****************************** MACROS ******************************/
 #define ROTLEFT(a, b) ((a << b) | (a >> (32 - b)))

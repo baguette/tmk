@@ -35,7 +35,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define FILE_ERROR -2
 
 void usage(int argc, char **arg);
-void printDigestInHex(BYTE   digest[SHA1_DIGEST_LENGTH], const char* file);
 
 void usage(int argc, char **arg)
 {
@@ -43,55 +42,16 @@ void usage(int argc, char **arg)
     exit(USAGE_ERROR);
 }
 
-void printDigestInHex(BYTE   digest[SHA1_DIGEST_LENGTH], const char* file)
-{
-    int a;
-
-    for(a = 0;a < SHA1_DIGEST_LENGTH;a++)
-    {
-
-        printf("%02x", digest[a]);
-    }
-
-    printf("  %s\n", file);
-}
-
 int main(int argc, char **argv)
 {
-    /* File Handle */
-    FILE*       fp = NULL;
-    BYTE        buff[SHA1_BLOCK_LENGTH];
-    int         bytesRead;
+    unsigned char digest[20];
+    unsigned char hash[41];
 
-    /* Context to hold SHA1 hash */
-    SHA1_CTX     sha_ctx;
-    BYTE   digest[SHA1_DIGEST_LENGTH];
+    tm_crypto_hash_file(argv[1], digest);
+    tm_crypto_hash_to_string(digest, hash);
 
-    /* Check that SHA1 test driver has correct number of arguments */
-    if(argc != 2)
-    {
-        usage(argc, argv);
-    }
-
-    /* Initialize SHA1 Context */
-    sha1_init(&sha_ctx);
-
-    if((fp = fopen(argv[1], "r")) == NULL) {
-        printf("File %s could not be opened\n", argv[1]);
-        exit(FILE_ERROR);
-    }
-
-    while((bytesRead = fread(buff, 1, SHA1_BLOCK_LENGTH, fp)) != 0)
-    {
-        /* Update SHA1 Context with block of data that was read */
-        sha1_update(&sha_ctx, buff, bytesRead);
-    }
-
-    /* Finalize SHA1 Context */
-    sha1_final(&sha_ctx, digest);
-
-    /* Print SHA1 Digest */
-    printDigestInHex(digest, argv[1]);
+    printf("%s  %s\n", hash, argv[1]);
+    //printDigestInHex(digest, argv[1]);
 
     return 0;
 }

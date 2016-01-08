@@ -1,43 +1,43 @@
-/*********************************************************************
-* Filename:   	sha1.h
-* Author:     	Brad Conte (brad AT bradconte.com)
-* Modified by:	Andre Schalkwyk (avs.aswyk AT gmail.com) 2016-01-05
-* Copyright:
-* Disclaimer: 	This code is presented "as is" without any guarantees.
-* Details:    	Defines the API for the corresponding SHA1 implementation.
-*********************************************************************/
+
+/*
+
+Copyright (c) 2016, Andre Schalkwyk and Cory Burgett
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
 
 #ifndef TM_CRYPTO_H
 #define TM_CRYPTO_H
 
-/*************************** HEADER FILES ***************************/
-#include <stddef.h>
+#define TM_CRYPTO_USAGE_ERROR	0x1
+#define TM_CRYPTO_FILE_ERROR	0x2
 
-/****************** HIGHER LEVEL CRYPTO FUNCTIONS *******************/
+#define CRYPTO_HASH_SIZE 			20
+#define CRYPTO_HASH_STRING_LENGTH	41
 
-// TODO : Functions that TMake will use to cache dependancies
+void tm_crypto_hash_data(const unsigned char* data, unsigned char digest[CRYPTO_HASH_SIZE]);
+void tm_crypto_hash_file(const char* file, unsigned char digest[CRYPTO_HASH_SIZE]);
+void tm_crypto_hash_to_string(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH]);
 
-
-
-/****************************** MACROS ******************************/
-#define SHA1_BLOCK_LENGTH	64
-#define SHA1_DIGEST_LENGTH	20			// SHA1 outputs a 20 byte digest
-
-/**************************** DATA TYPES ****************************/
-typedef unsigned char BYTE;             // 8-bit byte
-typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
-
-typedef struct {
-	BYTE data[64];
-	WORD datalen;
-	unsigned long long bitlen;
-	WORD state[5];
-	WORD k[4];
-} SHA1_CTX;
-
-/*********************** FUNCTION DECLARATIONS **********************/
-void sha1_init(SHA1_CTX *ctx);
-void sha1_update(SHA1_CTX *ctx, const BYTE data[], size_t len);
-void sha1_final(SHA1_CTX *ctx, BYTE hash[]);
-
-#endif   // SHA1_H
+#endif
