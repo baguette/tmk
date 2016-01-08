@@ -97,15 +97,12 @@ void free_rule_list(tm_rule_list *rules)
 }
 
 
-int target_exists(char *target, tm_rule_list *rules)
+int target_exists(char *target, target_list *targets)
 {
-	tm_rule_list *node = rules;
-
-	while (node) {
-		if (strcmp(node->rule->target, target) == 0) {
+	for (; targets; targets = targets->next) {
+		if (strcmp(targets->name, target) == 0) {
 			return 1;
 		}
-		node = node->next;
 	}
 
 	return 0;
@@ -228,6 +225,18 @@ char *target_copy(const char *target)
 	strcpy(ret, target);
 
 	return ret;
+}
+
+target_list *get_targets(tm_rule_list *rules)
+{
+	target_list *targets = NULL;
+	tm_rule_list *node = NULL;
+
+	for (node = rules; node; node = node->next) {
+		targets = target_cons(node->rule->target, targets);
+	}
+
+	return targets;
 }
 
 char *target_list_to_string(target_list *targets)

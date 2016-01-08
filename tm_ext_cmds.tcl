@@ -1,3 +1,4 @@
+# Check if a variable var is defined
 proc defined {var} {
 	if {[info exists $var]} {
 		return 1
@@ -6,6 +7,7 @@ proc defined {var} {
 	}
 }
 
+# Check if an array a contains a value for key
 proc array_has {a key} {
 	global $a
 
@@ -16,6 +18,7 @@ proc array_has {a key} {
 	}
 }
 
+# Set a global parameter var to val using mode mode
 proc param {var mode val} {
 	global TM_PARAM
 	global TM_ENV_LOOKUP
@@ -33,5 +36,18 @@ proc param {var mode val} {
 	} else {
 		error "Unknown mode in parameter assignment: $mode"
 	}
+}
+
+# Clean up a list of options to make it suitable for exec
+proc options {str} {
+	set OPTIONS [split $str "\n"]
+	set TRIMOPTS {}
+	foreach OPT $OPTIONS {
+		set trim [string trim $OPT]
+		if {[string length $trim]} {
+			lappend TRIMOPTS $trim
+		}
+	}
+	return $TRIMOPTS
 }
 

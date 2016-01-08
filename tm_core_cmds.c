@@ -12,6 +12,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	tm_rule *rule = NULL;
 	target_list *deps = NULL;
+	Jim_Obj *target_subst, *deps_subst;
 	char *target = NULL;
 	char *recipe = NULL;
 	int i, numdeps;
@@ -26,15 +27,17 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return (JIM_ERR);
 	}
 
-	target = target_copy(Jim_String(argv[1]));
+	Jim_SubstObj(interp, argv[1], &target_subst, 0);
+	target = target_copy(Jim_String(target_subst));
 
 	if (argc == 4) {
 		recipe = target_copy(Jim_String(argv[3]));
 	}
 
-	numdeps = Jim_ListLength(interp, argv[2]);
+	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
+	numdeps = Jim_ListLength(interp, deps_subst);
 	for (i = 0; i < numdeps; i++) {
-		Jim_Obj *dep = Jim_ListGetIndex(interp, argv[2], i);
+		Jim_Obj *dep = Jim_ListGetIndex(interp, deps_subst, i);
 		char *sdep = target_copy(Jim_String(dep));
 
 		deps = target_cons(sdep, deps);
@@ -47,9 +50,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		tm_goal = target;
 	}
 
-	len = strlen(fmt) + strlen(target) + strlen(recipe) + 1;
+	len = strlen(fmt) + strlen(target) + (recipe ? strlen(recipe) : 0) + 1;
 	cmd = malloc(len);
-	sprintf(cmd, fmt, target, recipe);
+	sprintf(cmd, fmt, target, recipe ? recipe : "");
 	Jim_Eval(interp, cmd);
 	free(cmd);
 

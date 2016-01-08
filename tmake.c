@@ -59,12 +59,70 @@ char *get(int arg, int argc, char **argv)
 	return NULL;
 }
 
+static target_list *updated_targets = NULL;
+
+int update(char *target)
+{
+	char *cachefile = NULL;
+	unsigned char digest[CRYPTO_HASH_SIZE];
+	char newhash[CRYPTO_HASH_STRING_LENGTH];
+	tm_rule *rule = NULL;
+
+	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
+	sprintf(cachefile, TM_CACHE "/%s", target);
+
+	rule = find_rule(target, tm_rules);
+	
+	if (!rule) {
+		return (JIM_ERR);
+	}
+
+	updated_targets = target_cons(rule->target, updated_targets);
+
+	if (rule->type == TM_EXPLICIT) {
+		FILE *fp = NULL;
+
+		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
+		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
+
+		fp = fopen(cachefile, "w");
+		fwrite(newhash, 1, strlen(newhash), fp);
+		fclose(fp);
+	} else if (rule->type == TM_FILENAME) {
+		/* assume it's a file */
+		FILE *fp = NULL;
+
+		TM_CRYPTO_HASH_FILE(target, digest);
+		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
+
+		fp = fopen(cachefile, "w");
+		fwrite(newhash, 1, strlen(newhash), fp);
+		fclose(fp);
+	}
+
+	free(cachefile);
+
+	/*
+	Adding this return to squeltch compilation warning.
+	Cory should review this code
+	*/
+	return (JIM_OK);
+}
+
+
+int was_updated(char *target)
+{
+	return target_exists(target, updated_targets);
+}
+
+
 int needs_update(char *target)
 {
 	char *cachefile = NULL;
 	unsigned char digest[CRYPTO_HASH_SIZE];
 	char oldhash[CRYPTO_HASH_STRING_LENGTH];
 	char newhash[CRYPTO_HASH_STRING_LENGTH];
+	target_list *deps = NULL;
 	tm_rule *rule = NULL;
 
 	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
@@ -74,6 +132,12 @@ int needs_update(char *target)
 
 	if (!rule) {
 		goto yes;
+	}
+
+	for (deps = rule->deps; deps; deps = deps->next) {
+		if (was_updated(deps->name)) {
+			goto yes;
+		}
 	}
 
 	if (rule->type == TM_EXPLICIT) {
@@ -139,51 +203,6 @@ target_list *need_update(target_list *targets)
 	return oodate;
 }
 
-int update(char *target)
-{
-	char *cachefile = NULL;
-	unsigned char digest[CRYPTO_HASH_SIZE];
-	char newhash[CRYPTO_HASH_STRING_LENGTH];
-	tm_rule *rule = NULL;
-
-	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
-	sprintf(cachefile, TM_CACHE "/%s", target);
-
-	rule = find_rule(target, tm_rules);
-	
-	if (!rule) {
-		return (JIM_ERR);
-	}
-
-	if (rule->type == TM_EXPLICIT) {
-		FILE *fp = NULL;
-
-		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
-		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-		fp = fopen(cachefile, "w");
-		fwrite(newhash, 1, strlen(newhash), fp);
-		fclose(fp);
-	} else if (rule->type == TM_FILENAME) {
-		/* assume it's a file */
-		FILE *fp = NULL;
-
-		TM_CRYPTO_HASH_FILE(target, digest);
-		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-		fp = fopen(cachefile, "w");
-		fwrite(newhash, 1, strlen(newhash), fp);
-		fclose(fp);
-	}
-
-	free(cachefile);
-
-	/*
-	Adding this return to squeltch compilation warning.
-	Cory should review this code
-	*/
-	return (JIM_OK);
-}
 
 
 void wrap(Jim_Interp *interp, int error) {
@@ -194,6 +213,58 @@ void wrap(Jim_Interp *interp, int error) {
 		exit(EXIT_FAILURE);
 	}
 }
+
+
+void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
+{
+	if (!sorted_rules) {
+		/* nothing to do */
+		return;
+	}
+
+	for (; sorted_rules; sorted_rules = sorted_rules->next) {
+		tm_rule *rule = sorted_rules->rule;
+		if (rule->type == TM_EXPLICIT) {
+			/* If the rule has a recipe and needs an update */
+			if (rule->recipe
+			&&  (force || needs_update(rule->target))) {
+				/* Execute the recipe for the current rule */
+				const char *fmt = "recipe::%s {%s} {%s} {%s}";
+				int len = 0;
+				char *cmd = NULL;
+				char *target = rule->target;
+				char *inputs = target_list_to_string(rule->deps);
+				target_list *oodate_deps = need_update(rule->deps);
+				char *oodate = target_list_to_string(oodate_deps);
+				tm_rule_list *oodate_rules = find_rules(oodate_deps, tm_rules);
+
+				update_rules(interp, oodate_rules, force);
+
+				printf("Making target %s:\n", rule->target);
+				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
+				cmd = malloc(len);
+				sprintf(cmd, fmt, target, target, inputs, oodate);
+				wrap(interp, Jim_Eval(interp, cmd));
+				free(cmd);
+				free(oodate);
+				free(inputs);
+				update(rule->target);
+				rule->type = TM_UPDATED;
+			} else {
+				printf("Target %s is up to date\n", rule->target);
+			}
+		} else if (rule->type == TM_FILENAME) {
+			/* Check that the file actually exists */
+			if (!file_exists(rule->target)) {
+				fprintf(stderr, "ERROR: Unable to find rule for target %s", rule->target);
+				exit(EXIT_FAILURE);
+			}
+			update(rule->target);
+			rule->type = TM_UPDATED;
+		}
+	}
+}
+
 
 int main(int argc, char **argv)
 {
@@ -309,43 +380,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while (sorted_rules) {
-		if (sorted_rules->rule->type == TM_EXPLICIT) {
-			printf("Making target %s:\n", sorted_rules->rule->target);
-			/* If the rule has a recipe and needs an update */
-			if (sorted_rules->rule->recipe
-			&& (force_update
-			||  needs_update(sorted_rules->rule->target)))
-			{
-				/* Execute the recipe for the current rule */
-				const char *fmt = "recipe::%s {%s} {%s} {%s}";
-				int len = 0;
-				char *cmd = NULL;
-				char *target = sorted_rules->rule->target;
-				char *inputs = target_list_to_string(sorted_rules->rule->deps);
-				char *oodate = target_list_to_string(need_update(sorted_rules->rule->deps));
-
-				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
-				cmd = malloc(len);
-				sprintf(cmd, fmt, target, target, inputs, oodate);
-				wrap(interp, Jim_Eval(interp, cmd));
-				free(cmd);
-				free(oodate);
-				free(inputs);
-				update(sorted_rules->rule->target);
-			} else {
-				printf("Nothing to be done for %s\n", sorted_rules->rule->target);
-			}
-		} else if (sorted_rules->rule->type == TM_FILENAME) {
-			/* Check that the file actually exists */
-			if (!file_exists(sorted_rules->rule->target)) {
-				fprintf(stderr, "ERROR: Unable to find rule for target %s", sorted_rules->rule->target);
-				exit(EXIT_FAILURE);
-			}
-			update(sorted_rules->rule->target);
-		}
-		sorted_rules = sorted_rules->next;
-	}
+	update_rules(interp, sorted_rules, force_update);
 
 	/* Free the Tcl interpreter */
 	Jim_FreeInterp(interp);

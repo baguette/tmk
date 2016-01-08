@@ -4,6 +4,7 @@
 #define TM_EXPLICIT 0
 #define TM_IMPLICIT 1
 #define TM_FILENAME 2
+#define TM_UPDATED  3
 
 #define TM_UNMARKED  0
 #define TM_TEMPORARY 1
@@ -34,13 +35,14 @@ tm_rule *new_rule(char *target, target_list *deps, char *recipe);
 target_list *target_cons(char *name, target_list *next);
 tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next);
 
-int target_exists(char *target, tm_rule_list *rules);
+int target_exists(char *target, target_list *targets);
 tm_rule *find_rule(char *name, tm_rule_list *rules);
 tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules);
 
 tm_rule_list *topsort(char *target, tm_rule_list *rules);
 
 char *target_copy(const char *target);
+target_list *get_targets(tm_rule_list *rules);
 
 tm_rule_list *rule_list_reverse(tm_rule_list *rules);
 target_list *target_list_reverse(target_list *targets);
