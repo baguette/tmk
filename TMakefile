@@ -3,17 +3,6 @@ param CFLAGS = "-g -O2 -ansi -Wall"
 
 param MAKE_C_EXT = "jimtcl/jimsh jimtcl/make-c-ext.tcl"
 
-proc options {str} {
-	set OPTIONS [split $str "\n"]
-	set TRIMOPTS {}
-	foreach OPT $OPTIONS {
-		set trim [string trim $OPT]
-		if {[string length $trim]} {
-			lappend TRIMOPTS $trim
-		}
-	}
-	return $TRIMOPTS
-}
 param JIMFLAGS = [options { --disable-lineedit
                             --math
                             --disable-docs
