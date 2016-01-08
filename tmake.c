@@ -151,6 +151,8 @@ int update(char *target)
 		fwrite(newhash, 1, strlen(newhash), fp);
 		fclose(fp);
 	}
+
+	free(cachefile);
 }
 
 
@@ -274,8 +276,8 @@ int main(int argc, char **argv)
 	while (sorted_rules) {
 		printf("Making target %s:\n", sorted_rules->rule->target);
 		if (sorted_rules->rule->recipe
-		&& (needs_update(sorted_rules->rule->target)
-		||  force_update)) {
+		&& (force_update
+		||  needs_update(sorted_rules->rule->target))) {
 			wrap(interp, Jim_Eval(interp, sorted_rules->rule->recipe));
 			update(sorted_rules->rule->target);
 		} else {
