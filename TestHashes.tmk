@@ -1,0 +1,6 @@
+
+rule test {} {
+	set hash [hash-file tmake.c]
+	puts "$hash  tmake.c"
+}
+
