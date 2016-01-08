@@ -20,4 +20,6 @@ run() {
  ;
  make)
 
-run $CC -o tmake $CFLAGS -Ijimtcl tmake.c tm_crypto.c jimtcl/libjim.a -lm
+TMAKE_SRC="tmake.c tm_crypto.c tm_target.c tm_core_cmds.c"
+
+run $CC -o tmake $CFLAGS -Ijimtcl $TMAKE_SRC jimtcl/libjim.a -lm

@@ -1,0 +1,23 @@
+
+rule all {foo}
+
+rule test3 {test1 test2} {
+	puts "test3"
+}
+
+rule test2 {test0} {
+	puts "test2"
+}
+
+rule test1 {test0} {
+	puts "test1"
+}
+
+rule test0 {} {
+	puts "test0"
+}
+
+rule foo {test3} {
+	puts "foo"
+}
+

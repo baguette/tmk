@@ -1,15 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "tm_target.h"
+#include "tm_core_cmds.h"
 
-tm_rule *new_rule(const char *target, target_list *deps, const char *recipe)
+char *tm_goal = NULL;
+tm_rule_list *tm_rules = NULL;
+
+tm_rule *new_rule(char *target, target_list *deps, char *recipe)
 {
 	tm_rule *rule = malloc(sizeof(tm_rule));
 	
 	rule->target = target;
 	rule->deps = deps;
 	rule->recipe = recipe;
+	rule->mark = TM_UNMARKED;
 
 	return rule;
 }
@@ -22,7 +28,7 @@ void free_rule(tm_rule *rule)
 	free(rule);
 }
 
-target_list *target_cons(const char *name, target_list *next)
+target_list *target_cons(char *name, target_list *next)
 {
 	target_list *targets = malloc(sizeof(target_list));
 
@@ -32,13 +38,23 @@ target_list *target_cons(const char *name, target_list *next)
 	return targets;
 }
 
-void free_target_list(target_list *targets)
+void deep_free_target_list(target_list *targets)
 {
 	if (targets == NULL)
 		return;
 
 	free(targets->name);
 	free_target_list(targets->next);
+	free(targets);
+}
+
+void free_target_list(target_list *targets)
+{
+	if (targets == NULL)
+		return;
+	
+	free_target_list(targets->next);
+	free(targets);
 }
 
 tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next)
@@ -51,16 +67,27 @@ tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next)
 	return rules;
 }
 
-void free_rule_list(tm_rule_list *rules)
+void deep_free_rule_list(tm_rule_list *rules)
 {
 	if (rules == NULL)
 		return;
 	
 	free_rule(rules->rule);
 	free_rule_list(rules->next);
+	free(rules);
 }
 
-tm_rule *find_rule(const char *target, tm_rule_list *rules)
+void free_rule_list(tm_rule_list *rules)
+{
+	if (rules == NULL)
+		return;
+	
+	free_rule_list(rules->next);
+	free(rules);
+}
+
+
+tm_rule *find_rule(char *target, tm_rule_list *rules)
 {
 	tm_rule_list *node = rules;
 	tm_rule *rule = NULL;
@@ -92,7 +119,7 @@ tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 
 
 /* Tarjan's algorithm */
-int topsort_visit(tm_rule rule, tm_rule_list *rules, tm_rule_list **sorted)
+static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sorted)
 {
 	if (rule->mark == TM_TEMPORARY) {
 		fprintf(stderr, "ERROR:  Cycle detected in dependency graph\n");
@@ -106,7 +133,10 @@ int topsort_visit(tm_rule rule, tm_rule_list *rules, tm_rule_list **sorted)
 		deps = find_rules(rule->deps, rules);
 		
 		while (deps) {
-			int n = topsort_visit(deps->rule, rules, sorted);
+			int n;
+
+			n = topsort_visit(deps->rule, rules, sorted);
+
 			if (n < 0)
 				return n;
 			deps = deps->next;
@@ -119,10 +149,24 @@ int topsort_visit(tm_rule rule, tm_rule_list *rules, tm_rule_list **sorted)
 	return 0;
 }
 
-tm_rule_list *topsort(const char *target, tm_rule_list *rules)
+static int topsort_reverse(tm_rule_list *rules)
+{
+	tm_rule_list *rev = NULL;
+	tm_rule_list *node = rules;
+
+	while (node) {
+		rev = rule_cons(node->rule, rev);
+		node = node->next;
+	}
+
+	return rev;
+}
+
+tm_rule_list *topsort(char *target, tm_rule_list *rules)
 {
 	tm_rule_list *sorted = NULL;
-	tm_rule rule = find_rule(target, rules);
+	tm_rule_list *rev = NULL;
+	tm_rule *rule = find_rule(target, rules);
 
 	if (rule == NULL)
 		return NULL;
@@ -132,7 +176,7 @@ tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 		tm_rule_list *node = rules;
 
 		while (node) {
-			if (node->rule->mark = TM_UNMARKED) {
+			if (node->rule->mark == TM_UNMARKED) {
 				found = 1;
 				topsort_visit(node->rule, rules, &sorted);
 			}
@@ -144,9 +188,20 @@ tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 			break;
 	}
 
-	return sorted;
+	rev = topsort_reverse(sorted);
+	free_rule_list(sorted);
+	return rev;
 }
 
+char *target_copy(const char *target)
+{
+	int len = strlen(target);
+	char *ret = malloc(len);
+
+	strcpy(ret, target);
+
+	return ret;
+}
 
 void print_rule_list(tm_rule_list *rules)
 {
