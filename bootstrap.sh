@@ -4,7 +4,7 @@
 set -e
 
 CC=${CC:-gcc}
-CFLAGS=${CFLAGS:- -g -O2}
+CFLAGS=${CFLAGS:- -ansi -Wall -g -O2}
 
 run() {
 	echo "$@"
