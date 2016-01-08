@@ -51,7 +51,6 @@ int main(int argc, char **argv)
     tm_crypto_hash_to_string(digest, hash);
 
     printf("%s  %s\n", hash, argv[1]);
-    //printDigestInHex(digest, argv[1]);
 
     return 0;
 }
