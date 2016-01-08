@@ -47,8 +47,8 @@ int main(int argc, char **argv)
     unsigned char digest[20];
     unsigned char hash[41];
 
-    tm_crypto_hash_file(argv[1], digest);
-    tm_crypto_hash_to_string(digest, hash);
+    tm_CryptoHashFile(argv[1], digest);
+    tm_CryptoHashToString(digest, hash);
 
     printf("%s  %s\n", hash, argv[1]);
 

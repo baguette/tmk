@@ -36,8 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CRYPTO_HASH_SIZE 			20
 #define CRYPTO_HASH_STRING_LENGTH	41
 
-void tm_crypto_hash_data(const unsigned char* data, unsigned char digest[CRYPTO_HASH_SIZE]);
-void tm_crypto_hash_file(const char* file, unsigned char digest[CRYPTO_HASH_SIZE]);
-void tm_crypto_hash_to_string(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH]);
+void tm_CryptoHashData(const unsigned char* data, unsigned char digest[CRYPTO_HASH_SIZE]);
+void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE]);
+void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH]);
 
 #endif

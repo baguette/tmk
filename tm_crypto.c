@@ -42,7 +42,7 @@ void sha1_final(SHA1_CTX *ctx, BYTE hash[]);
 
 
 /****************** HIGHER LEVEL CRYPTO FUNCTIONS *******************/
-void tm_crypto_hash_data(const unsigned char* data, unsigned char digest[20])
+void tm_CryptoHashData(const unsigned char* data, unsigned char digest[CRYPTO_HASH_SIZE])
 {
     BYTE        buff[SHA1_BLOCK_LENGTH];
 	BYTE*		pBuff;
@@ -73,7 +73,7 @@ void tm_crypto_hash_data(const unsigned char* data, unsigned char digest[20])
     sha1_final(&sha_ctx, digest);
 }
 
-void tm_crypto_hash_file(const char* file, unsigned char digest[20])
+void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE])
 {
 	/* File Handle */
     FILE*       fp = NULL;
@@ -102,7 +102,7 @@ void tm_crypto_hash_file(const char* file, unsigned char digest[20])
     sha1_final(&sha_ctx, digest);
 }
 
-void tm_crypto_hash_to_string(const unsigned char digest[20], unsigned char hash[41])
+void tm_CryptoHashToString(const unsigned char digest[CRYPTO_HASH_SIZE], unsigned char hash[CRYPTO_HASH_STRING_LENGTH])
 {
 	int i;
 	unsigned char *p = hash;
