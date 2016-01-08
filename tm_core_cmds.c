@@ -58,8 +58,8 @@ static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	string = Jim_String(argv[1]);
 
-	tm_CryptoHashData(string, digest);
-	tm_CryptoHashToString(digest, hash);
+	TM_CRYPTO_HASH_DATA(string, digest);
+	TM_CRYPTO_HASH_TO_STRING(digest, hash);
 
 	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
 
@@ -82,8 +82,8 @@ static int cryptoHashFile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	filename = Jim_String(argv[1]);
 
-	tm_CryptoHashFile(filename, digest);
-	tm_CryptoHashToString(digest, hash);
+	TM_CRYPTO_HASH_FILE(filename, digest);
+	TM_CRYPTO_HASH_TO_STRING(digest, hash);
 
 	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
 

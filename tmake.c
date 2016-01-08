@@ -22,7 +22,7 @@ int file_exists(const char *filename)
 		fclose(fp);
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -54,7 +54,7 @@ char *get(int arg, int argc, char **argv)
 {
 	if (arg < argc)
 		return argv[arg];
-	
+
 	usage(argc, argv);
 	return NULL;
 }
@@ -81,8 +81,8 @@ int needs_update(char *target)
 			fclose(fp);
 			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
 
-			tm_CryptoHashData(rule->recipe, digest);
-			tm_CryptoHashToString(digest, newhash);
+			TM_CRYPTO_HASH_DATA(rule->recipe, digest);
+			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
 			if (strcmp(oldhash, newhash) != 0) {
 				goto no;
@@ -94,14 +94,14 @@ int needs_update(char *target)
 		/* assume it's a file */
 		if (file_exists(cachefile)) {
 			FILE *fp = NULL;
-			
+
 			fp = fopen(cachefile, "r");
 			fread(oldhash, 1, CRYPTO_HASH_STRING_LENGTH, fp);
 			fclose(fp);
 			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
 
-			tm_CryptoHashFile(target, digest);
-			tm_CryptoHashToString(digest, newhash);
+			TM_CRYPTO_HASH_FILE(target, digest);
+			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
 			if (strcmp(oldhash, newhash) != 0) {
 				goto no;
@@ -134,8 +134,8 @@ int update(char *target)
 	if (rule) {
 		FILE *fp = NULL;
 
-		tm_CryptoHashData(rule->recipe, digest);
-		tm_CryptoHashToString(digest, newhash);
+		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
+		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
 		fp = fopen(cachefile, "w");
 		fwrite(newhash, 1, strlen(newhash), fp);
@@ -144,8 +144,8 @@ int update(char *target)
 		/* assume it's a file */
 		FILE *fp = NULL;
 
-		tm_CryptoHashFile(target, digest);
-		tm_CryptoHashToString(digest, newhash);
+		TM_CRYPTO_HASH_FILE(target, digest);
+		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
 		fp = fopen(cachefile, "w");
 		fwrite(newhash, 1, strlen(newhash), fp);
@@ -153,6 +153,12 @@ int update(char *target)
 	}
 
 	free(cachefile);
+
+	/*
+	Adding this return to squeltch compilation warning.
+	Cory should review this code
+	*/
+	return (JIM_OK);
 }
 
 
@@ -291,4 +297,3 @@ int main(int argc, char **argv)
 
 	return retval;
 }
-
