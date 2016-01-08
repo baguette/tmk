@@ -149,7 +149,7 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 	return 0;
 }
 
-static int topsort_reverse(tm_rule_list *rules)
+static tm_rule_list *topsort_reverse(tm_rule_list *rules)
 {
 	tm_rule_list *rev = NULL;
 	tm_rule_list *node = rules;

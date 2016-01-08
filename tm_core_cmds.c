@@ -11,7 +11,6 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	target_list *deps = NULL;
 	char *target = NULL;
 	char *recipe = NULL;
-	int target_len, recipe_len = 0, dep_len;
 	int i, numdeps;
 
 	if (argc < 3 || argc > 4) {
