@@ -19,7 +19,7 @@ proc cc args {
 proc make-c-ext {tclfile cfile} {
 	global MAKE_C_EXT
 
-	exec echo "#define JIM_EMBEDDED" > $cfile
+	exec -flags @ echo "#define JIM_EMBEDDED" > $cfile
 	exec {*}$MAKE_C_EXT $tclfile >> $cfile
 }
 

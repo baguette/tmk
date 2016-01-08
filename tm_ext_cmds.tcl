@@ -69,16 +69,20 @@ proc exec args {
 		return "";
 	}
 
-	if {[lindex args 0] == "-flags"} {
-		set flags [lindex args 1]
+	if {"[lindex $args 0]" eq "-flags"} {
+		if {[llength $args] < 2} {
+			error "No flags provided to -flags"
+		}
+		set flags [lindex $args 1]
 		set start 2
 	}
 
 	for {set i 0} {$i < [string length $flags]} {incr i} {
-		switch [string index $i] {
+		switch [string index $flags $i] {
 			"@" {set echo 0}
 			"-" {set errexit 0}
 			"+" {set noexec 0}
+			default {error "Unknown flag given to exec: [string index $i]"}
 		}
 	}
 
