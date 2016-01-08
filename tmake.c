@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define JIM_EMBEDDED
 #include <jim.h>
 
 int main(int argc, char **argv)
