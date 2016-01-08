@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 	Jim_Interp *interp = NULL;
 
 	int i;
-
+	
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {

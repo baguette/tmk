@@ -1,5 +1,6 @@
 # Check if a variable var is defined
 proc defined {var} {
+	global $var
 	if {[info exists $var]} {
 		return 1
 	} else {
@@ -54,15 +55,15 @@ proc options {str} {
 rename exec tcl::exec
 
 proc exec args {
-	global TM_PARAMS
+	global TM_NO_EXECUTE
 	set flags ""
 	set echo 1
 	set errexit 1
 	set noexec 0
 	set start 0
 
-	if {[array_has TM_PARAMS TM_NO_EXECUTE]} {
-		set noexec $TM_PARAMS(TM_NO_EXECUTE)
+	if {[defined TM_NO_EXECUTE]} {
+		set noexec $TM_NO_EXECUTE
 	}
 
 	if {[llength args] == 0} {
@@ -97,23 +98,19 @@ proc exec args {
 		return ""
 	}
 
-	set status 0
-	set stdout ""
-	try {
-		set stdout [tcl::exec {*}$rest]
-		set status 0
-	} on CHILDSTATUS {results options} {
-		set status [lindex [dict get $options -errorcode] 2]
-	}
+	set childpid [tcl::exec {*}$rest &]
+	set status [os.wait $childpid]    ;# This might not work on Windows...
 
-	if {$status != 0} {
+	if {"[lindex $status 1]" eq "exit" && [lindex $status 2] != 0} {
 		if {$errexit} {
-			error "exec returned non-zero return code: $status\n$stdout"
+			error "exec returned non-zero return code: $status"
+		}
+	} elseif {"[lindex $status 1]" ne "exit"} {
+		if {$errexit} {
+			error "exec terminated abnormally: $status"
 		}
 	}
 
-	if {[string length $stdout]} {
-		puts $stdout
-	}
+	return ""
 }
 
