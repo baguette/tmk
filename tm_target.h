@@ -1,7 +1,11 @@
 #ifndef TM_TARGET_H
 #define TM_TARGET_H
 
-#define TM_UNMARKED 0
+#define TM_EXPLICIT 0
+#define TM_IMPLICIT 1
+#define TM_FILENAME 2
+
+#define TM_UNMARKED  0
 #define TM_TEMPORARY 1
 #define TM_PERMANENT 2
 
@@ -11,6 +15,7 @@ typedef struct tm_rule {
 	char *target;
 	struct target_list *deps;
 	char *recipe;
+	unsigned char type;
 	unsigned char mark;
 } tm_rule;
 

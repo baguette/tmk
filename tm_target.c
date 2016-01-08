@@ -15,7 +15,17 @@ tm_rule *new_rule(char *target, target_list *deps, char *recipe)
 	rule->target = target;
 	rule->deps = deps;
 	rule->recipe = recipe;
+	rule->type = TM_EXPLICIT;
 	rule->mark = TM_UNMARKED;
+
+	return rule;
+}
+
+tm_rule *new_filename(char *target)
+{
+	tm_rule *rule = new_rule(target, NULL, NULL);
+
+	rule->type = TM_FILENAME;
 
 	return rule;
 }
@@ -116,6 +126,10 @@ tm_rule *find_rule(char *target, tm_rule_list *rules)
 		node = node->next;
 	}
 
+	if (!rule) {
+		rule = new_filename(target);
+	}
+
 	return rule;
 }
 
@@ -199,22 +213,7 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules)
 	if (rule == NULL)
 		return NULL;
 	
-	for (;;) {
-		int found = 0;
-		tm_rule_list *node = rules;
-
-		while (node) {
-			if (node->rule->mark == TM_UNMARKED) {
-				found = 1;
-				topsort_visit(node->rule, rules, &sorted);
-			}
-
-			node = node->next;
-		}
-
-		if (!found)
-			break;
-	}
+	topsort_visit(rule, rules, &sorted);
 
 	rev = rule_list_reverse(sorted);
 	free_rule_list(sorted);

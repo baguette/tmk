@@ -1,0 +1,11 @@
+
+rule all {foo}
+
+rule foo {foo.o} {
+	puts "gcc -o foo foo.o"
+}
+
+rule foo.o {foo.c} {
+	puts "gcc -o foo.o -c foo.c"
+}
+

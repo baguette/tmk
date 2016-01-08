@@ -271,17 +271,30 @@ int main(int argc, char **argv)
 
 	wrap(interp, Jim_Eval(interp, "file mkdir " TM_CACHE));
 
-	sorted_rules = topsort(goal ? goal : tm_goal, tm_rules);
+	goal = goal ? goal : tm_goal;
+	sorted_rules = topsort(goal, tm_rules);
+
+	if (!sorted_rules) {
+		fprintf(stderr, "ERROR: Could not find rule to make %s\n", goal);
+		exit(EXIT_FAILURE);
+	}
 
 	while (sorted_rules) {
-		printf("Making target %s:\n", sorted_rules->rule->target);
-		if (sorted_rules->rule->recipe
-		&& (force_update
-		||  needs_update(sorted_rules->rule->target))) {
-			wrap(interp, Jim_Eval(interp, sorted_rules->rule->recipe));
-			update(sorted_rules->rule->target);
-		} else {
-			printf("Nothing to be done for %s\n", sorted_rules->rule->target);
+		if (sorted_rules->rule->type == TM_EXPLICIT) {
+			printf("Making target %s:\n", sorted_rules->rule->target);
+			if (sorted_rules->rule->recipe
+			&& (force_update
+			||  needs_update(sorted_rules->rule->target))) {
+				wrap(interp, Jim_Eval(interp, sorted_rules->rule->recipe));
+				update(sorted_rules->rule->target);
+			} else {
+				printf("Nothing to be done for %s\n", sorted_rules->rule->target);
+			}
+		} else if (sorted_rules->rule->type == TM_FILENAME) {
+			if (!file_exists(sorted_rules->rule->target)) {
+				fprintf(stderr, "ERROR: Unable to find rule for target %s", sorted_rules->rule->target);
+				exit(EXIT_FAILURE);
+			}
 		}
 		sorted_rules = sorted_rules->next;
 	}
