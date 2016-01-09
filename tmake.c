@@ -242,7 +242,7 @@ target_list *need_update(target_list *targets)
 {
 	target_list *oodate = NULL;
 
-	for (targets = targets; targets; targets = targets->next) {
+	for (; targets; targets = targets->next) {
 		if (needs_update(targets->name)) {
 			oodate = target_cons(targets->name, oodate);
 		}
