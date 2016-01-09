@@ -54,6 +54,7 @@ This reference manual makes use of the following terms:
 * `-j` *`max_processes`*: Evaluate the TMakefile by spawning a number of processes equal to *`max_processes`* (a positive integer).  Defaults to 1.
 * `-e`: Use environment variables to override parameters defined in the TMakefile.
 * `-u`: Construct the goal even if it is up to date.
+* `-s`: Silent mode:  do not display commands that are executed while processing the TMakefile.
 
 
 ## Command Reference
@@ -127,4 +128,14 @@ Returns 1 if *`string`* is the empty string, or else returns 0.
 **`commands `** *`target`*
 
 Returns 1 if the target *`target`* has an associated recipe, or else returns 0.
+
+
+## Predefined variables
+
+* `TM_CURRENT_GOAL` - The goal of this execution of the TMakefile.
+* `TM_PARAM` - An array of parameters that were overridden on the command line.
+* `TM_NO_EXECUTE` - Set to 1 if `-n` was specified on the command line.
+* `TM_SILENT_MODE` - Set to 1 if `-s` was specified on the command line.
+* `TM_ENV_LOOKUP` - Set to 1 if `-e` was specified on the command line.
+* `TM_MACHINE_ARCH` - The architecture of the machine `tmake` was built for.
 
