@@ -14,6 +14,18 @@
 #define TM_CACHE ".tmcache"
 #define DEFAULT_FILE "TMakefile"
 
+const char *DEFAULT_INC_PATH[] = {
+	".",
+	"/usr/lib/tmake/include",
+	NULL
+};
+
+const char *DEFAULT_PKG_PATH[] = {
+	".",
+	"/usr/lib/tmake/packages",
+	NULL
+};
+
 int file_exists(const char *filename)
 {
 	FILE *fp;
@@ -57,6 +69,42 @@ char *get(int arg, int argc, char **argv)
 
 	usage(argc, argv);
 	return NULL;
+}
+
+static int register_search_paths(Jim_Interp *interp, target_list *more_inc, target_list *more_pkg)
+{
+	Jim_Obj *inc, *pkg;
+	int i;
+
+	inc = Jim_NewListObj(interp, NULL, 0);
+	pkg = Jim_NewListObj(interp, NULL, 0);
+
+	for (; more_inc; more_inc = more_inc->next) {
+		Jim_Obj *elem = Jim_NewStringObj(interp, more_inc->name, strlen(more_inc->name));
+		Jim_ListAppendElement(interp, inc, elem);
+	}
+
+	for (; more_pkg; more_pkg = more_pkg->next) {
+		Jim_Obj *elem = Jim_NewStringObj(interp, more_pkg->name, strlen(more_pkg->name));
+		Jim_ListAppendElement(interp, pkg, elem);
+	}
+
+	for (i = 0; DEFAULT_INC_PATH[i]; i++) {
+		Jim_Obj *elem = NULL;
+		elem = Jim_NewStringObj(interp, DEFAULT_INC_PATH[i], strlen(DEFAULT_INC_PATH[i]));
+		Jim_ListAppendElement(interp, inc, elem);
+	}
+
+	for (i = 0; DEFAULT_PKG_PATH[i]; i++) {
+		Jim_Obj *elem = NULL;
+		elem = Jim_NewStringObj(interp, DEFAULT_PKG_PATH[i], strlen(DEFAULT_PKG_PATH[i]));
+		Jim_ListAppendElement(interp, inc, elem);
+	}
+
+	Jim_SetGlobalVariableStr(interp, TM_INCLUDE_PATH, inc);
+	Jim_SetGlobalVariableStr(interp, JIM_LIBPATH, pkg);
+
+	return JIM_OK;
 }
 
 static target_list *updated_targets = NULL;
@@ -260,8 +308,10 @@ void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
 				fprintf(stderr, "ERROR: Unable to find rule for target %s", rule->target);
 				exit(EXIT_FAILURE);
 			}
-			update(rule->target);
-			rule->type = TM_UPDATED;
+			if (force || needs_update(rule->target)) {
+				update(rule->target);
+				rule->type = TM_UPDATED;
+			}
 		}
 	}
 }
@@ -334,6 +384,8 @@ int main(int argc, char **argv)
 	/* Initialize any static extensions */
 	Jim_InitStaticExtensions(interp);
 	wrap(interp, Jim_tm_ext_cmdsInit(interp));
+
+	register_search_paths(interp, also_include, also_package);
 
 	/* Initialize commandline parameters */
 	while (parameters) {
