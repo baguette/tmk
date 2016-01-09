@@ -119,7 +119,7 @@ proc exec args {
 	}
 
 	set childpid [tcl::exec {*}$rest &]
-	set status [os.wait $childpid]    ;# This might not work on Windows...
+	set status [os.wait $childpid]    ;# TODO: This might not work on Windows...
 
 	if {"[lindex $status 1]" eq "exit" && [lindex $status 2] != 0} {
 		if {$errexit} {
