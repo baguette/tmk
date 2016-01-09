@@ -34,13 +34,14 @@ rule jim {} {
 	cd .. 
 }
 
+set H_SRC "tm_crypto.h tm_target.h tm_core_cmds.h tm_ext_cmds.h"
 set C_SRC "tmake.c tm_crypto.c tm_target.c tm_core_cmds.c tm_ext_cmds.c"
 
 rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
 	make-c-ext $INPUTS $TARGET
 }
 
-rule tmake {jim $C_SRC} {
+rule tmake {jim $C_SRC $H_SRC} {
 	global C_SRC
 
 	cc -o $TARGET -Ijimtcl {*}$C_SRC jimtcl/libjim.a -lm
