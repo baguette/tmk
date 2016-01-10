@@ -138,3 +138,17 @@ proc exec args {
 	return ""
 }
 
+
+# Take a list of filenames and replace the extensions that match x with y
+proc replace-ext {files x y} {
+	set ys {}
+	foreach f $files {
+		if {"[file extension $f]" eq "$x"} {
+			lappend ys "[file rootname $f]$y"
+		} else {
+			lappend ys $f
+		}
+	}
+	return $ys
+}
+
