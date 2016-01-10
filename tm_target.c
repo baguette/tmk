@@ -220,7 +220,7 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules)
 char *target_copy(const char *target)
 {
 	int len = strlen(target);
-	char *ret = malloc(len);
+	char *ret = malloc(len + 1);
 
 	strcpy(ret, target);
 

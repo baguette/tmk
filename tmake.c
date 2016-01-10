@@ -224,6 +224,7 @@ int needs_update(sqlite3 *db, const char *tmfile, char *target)
 		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
 	} else if (rule->type == TM_FILENAME) {
 		TM_CRYPTO_HASH_FILE(target, digest);
+		free_rule(rule);
 	}
 	TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
@@ -299,6 +300,8 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 				free(cmd);
 				free(oodate);
 				free(inputs);
+				free_rule_list(oodate_rules);
+				free_target_list(oodate_deps);
 				update(db, tmfile, rule->target);
 				rule->type = TM_UPDATED;
 				printf("\n");
@@ -481,6 +484,8 @@ int main(int argc, char **argv)
 	}
 
 	update_rules(db, interp, filename, sorted_rules, force_update);
+	free_rule_list(sorted_rules);
+	deep_free_rule_list(tm_rules);
 
 	sqlrc = sqlite3_close(db);
 	if (sqlrc != SQLITE_OK) {
