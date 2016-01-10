@@ -1,0 +1,9 @@
+
+rule all {test1 test2}
+
+rule {foo bar baz} {} {
+	puts $TARGET
+}
+
+rule test1 {foo test2}
+rule test2 {bar baz}

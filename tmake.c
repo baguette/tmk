@@ -437,6 +437,12 @@ int main(int argc, char **argv)
 	wrap(interp, Jim_Eval(interp, "file mkdir " TM_CACHE));
 
 	goal = goal ? goal : tm_goal;
+
+	if (!target_exists(goal, get_targets(tm_rules))) {
+		fprintf(stderr, "ERROR: goal target %s not defined\n", goal);
+		exit(EXIT_FAILURE);
+	}
+
 	sorted_rules = topsort(goal, tm_rules);
 
 	if (!sorted_rules) {

@@ -1,6 +1,6 @@
 
 rule test {tmake.c} {
-	set hash [hash-file $INPUTS]
+	set hash [sha1sum file $INPUTS]
 	puts "$hash  $INPUTS"
 }
 

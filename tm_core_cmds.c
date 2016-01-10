@@ -14,28 +14,31 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	tm_rule *rule = NULL;
 	target_list *deps = NULL;
 	Jim_Obj *target_subst, *deps_subst;
-	char *target = NULL;
 	char *recipe = NULL;
-	int i, numdeps;
+	int i, numtargs, numdeps;
 	const char *fmt = "proc recipe::%s {TARGET INPUTS OODATE} { \
 	%s\
 	}";
 	int len = 0;
 	char *cmd = NULL;
+	int ret = JIM_ERR;
 
+	/* check to make sure we got the information we need */
 	if (argc < 3 || argc > 4) {
 		Jim_WrongNumArgs(interp, 2, argv, "rule target-list dep-list ?script?");
 		return (JIM_ERR);
 	}
 
+	/* Perform variable substitution in the target and dependency lists */
 	Jim_SubstObj(interp, argv[1], &target_subst, 0);
-	target = target_copy(Jim_String(target_subst));
+	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
 
+	/* If we've got a recipe, store it */
 	if (argc == 4) {
 		recipe = target_copy(Jim_String(argv[3]));
 	}
 
-	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
+	/* Get all the dependencies and store them in a dep list */
 	numdeps = Jim_ListLength(interp, deps_subst);
 	for (i = 0; i < numdeps; i++) {
 		Jim_Obj *dep = Jim_ListGetIndex(interp, deps_subst, i);
@@ -44,45 +47,71 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		deps = target_cons(sdep, deps);
 	}
 
-	rule = new_rule(target, deps, recipe);
-	tm_rules = rule_cons(rule, tm_rules);
+	/* For each target in the list, create a rule and a proc */
+	numtargs = Jim_ListLength(interp, target_subst);
+	for (i = 0; i < numtargs; i++) {
+		Jim_Obj *target_obj = Jim_ListGetIndex(interp, target_subst, i);
+		char *target = target_copy(Jim_String(target_obj));
 
-	if (tm_goal == NULL) {
-		const char *fmt_set = "set TM_CURRENT_GOAL %s";
+		/* create a rule for this target */
+		rule = new_rule(target, deps, recipe);
+		tm_rules = rule_cons(rule, tm_rules);
 
-		tm_goal = target;
+		/* Do we need to set the default goal? */
+		if (tm_goal == NULL) {
+			const char *fmt_set = "set TM_CURRENT_GOAL %s";
 
-		len = strlen(fmt_set) + strlen(target) + 1;
+			tm_goal = target;
+
+			len = strlen(fmt_set) + strlen(target) + 1;
+			cmd = malloc(len);
+			sprintf(cmd, fmt_set, target);
+			ret = Jim_Eval(interp, cmd);
+			free(cmd);
+			if (ret != (JIM_OK)) {
+				return ret;
+			}
+		}
+
+		/* Create a proc representing this rule */
+		len = strlen(fmt) + strlen(target) + (recipe ? strlen(recipe) : 0) + 1;
 		cmd = malloc(len);
-		sprintf(cmd, fmt_set, target);
-		Jim_Eval(interp, cmd);
+		sprintf(cmd, fmt, target, recipe ? recipe : "");
+		ret = Jim_Eval(interp, cmd);
 		free(cmd);
+		if (ret != (JIM_OK)) {
+			return ret;
+		}
 	}
-
-	len = strlen(fmt) + strlen(target) + (recipe ? strlen(recipe) : 0) + 1;
-	cmd = malloc(len);
-	sprintf(cmd, fmt, target, recipe ? recipe : "");
-	Jim_Eval(interp, cmd);
-	free(cmd);
 
 	return (JIM_OK);
 }
 
-/* Crypto hash of string interface to jimtcl */
-static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+/* Provide tm_crypto functionality to Jim Tcl */
+static int sha1sumCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
 	char hash[CRYPTO_HASH_STRING_LENGTH];
 	unsigned char digest[CRYPTO_HASH_SIZE];
+	const char *subcmd = NULL;
 	const char *string = NULL;
 
-	if (argc != 2) {
-		Jim_WrongNumArgs(interp, 1, argv, "hash-string string");
+	if (argc != 3) {
+		Jim_WrongNumArgs(interp, 2, argv, "sha1sum \"file\"|\"string\" <filename>|<string>");
 		return (JIM_ERR);
 	}
 
-	string = Jim_String(argv[1]);
+	subcmd = Jim_String(argv[1]);
+	string = Jim_String(argv[2]);
 
-	TM_CRYPTO_HASH_DATA(string, digest);
+	if (strcmp(subcmd, "file") == 0) {
+		TM_CRYPTO_HASH_FILE(string, digest);
+	} else if (strcmp(subcmd, "string") == 0) {
+		TM_CRYPTO_HASH_DATA(string, digest);
+	} else {
+		Jim_WrongNumArgs(interp, 2, argv, "Invalid subcommand for sha1sum (should be \"file\" or \"string\")");
+		return (JIM_ERR);
+	}
+
 	TM_CRYPTO_HASH_TO_STRING(digest, hash);
 
 	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
@@ -90,29 +119,6 @@ static int cryptoHashString(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	return (JIM_OK);
 }
 
-
-/* Crypto hash of file interface to jimtcl */
-
-static int cryptoHashFile(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
-	char hash[CRYPTO_HASH_STRING_LENGTH];
-	unsigned char digest[CRYPTO_HASH_SIZE];
-	const char *filename = NULL;
-
-	if (argc != 2) {
-		Jim_WrongNumArgs(interp, 1, argv, "hash-file filename");
-		return (JIM_ERR);
-	}
-
-	filename = Jim_String(argv[1]);
-
-	TM_CRYPTO_HASH_FILE(filename, digest);
-	TM_CRYPTO_HASH_TO_STRING(digest, hash);
-
-	Jim_SetResultString(interp, hash, CRYPTO_HASH_STRING_LENGTH);
-
-	return (JIM_OK);
-}
 
 static int targetCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
@@ -226,6 +232,5 @@ void tm_RegisterCoreCommands(Jim_Interp *interp)
 	Jim_CreateCommand(interp, "include", includeCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "target", targetCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "commands", commandsCmd, NULL, NULL);
-	Jim_CreateCommand(interp, "hash-string", cryptoHashString, NULL, NULL);
-	Jim_CreateCommand(interp, "hash-file", cryptoHashFile, NULL, NULL);
+	Jim_CreateCommand(interp, "sha1sum", sha1sumCmd, NULL, NULL);
 }
