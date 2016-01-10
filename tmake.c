@@ -214,7 +214,7 @@ int needs_update(sqlite3 *db, const char *tmfile, char *target)
 		goto yes;
 	}
 
-	oldhash = (const char *)sqlite3_column_text(stm, 1);
+	oldhash = (const char *)sqlite3_column_text(stm, 0);
 	if (!oldhash) {
 		fprintf(stderr, "WARNING: Error getting cache for target %s\n", target);
 		goto yes;
