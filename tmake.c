@@ -3,6 +3,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <sqlite3.h>
+
 #define JIM_EMBEDDED
 #include <jim.h>
 
@@ -117,16 +119,16 @@ static int register_search_paths(Jim_Interp *interp, target_list *more_inc, targ
 
 static target_list *updated_targets = NULL;
 
-int update(char *target)
+int update(sqlite3 *db, const char *tmfile, char *target)
 {
-	char *cachefile = NULL;
 	unsigned char digest[CRYPTO_HASH_SIZE];
 	char newhash[CRYPTO_HASH_STRING_LENGTH];
 	tm_rule *rule = NULL;
-
-	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
-	sprintf(cachefile, TM_CACHE "/%s", target);
-
+	const char *fmt = "INSERT OR REPLACE INTO TMCache (TMakefile, Target, Hash) VALUES (?, ?, ?)";
+	sqlite3_stmt *stm = NULL;
+	const char *stmtail;
+	int sqlrc;
+	
 	rule = find_rule(target, tm_rules);
 	
 	if (!rule) {
@@ -136,28 +138,29 @@ int update(char *target)
 	updated_targets = target_cons(rule->target, updated_targets);
 
 	if (rule->type == TM_EXPLICIT) {
-		FILE *fp = NULL;
-
 		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
-		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-		fp = fopen(cachefile, "w");
-		fwrite(newhash, 1, strlen(newhash), fp);
-		fclose(fp);
 	} else if (rule->type == TM_FILENAME) {
-		/* assume it's a file */
-		FILE *fp = NULL;
-
 		TM_CRYPTO_HASH_FILE(target, digest);
-		TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-		fp = fopen(cachefile, "w");
-		fwrite(newhash, 1, strlen(newhash), fp);
-		fclose(fp);
 	}
 
-	free(cachefile);
+	TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
+	sqlrc = sqlite3_prepare(db, fmt, -1, &stm, &stmtail);
+	if (sqlrc != SQLITE_OK) {
+		fprintf(stderr, "WARNING: Unable to update cache for target %s\n", target);
+		return (JIM_ERR);
+	}
+
+	sqlite3_bind_text(stm, 1, tmfile, -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stm, 2, target, -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stm, 3, newhash, -1, SQLITE_TRANSIENT);
+	sqlrc = sqlite3_step(stm);
+	if (sqlrc != SQLITE_DONE) {
+		fprintf(stderr, "WARNING: Error updating cache for target %s\n", target);
+		sqlite3_finalize(stm);
+		return (JIM_ERR);
+	}
+	sqlite3_finalize(stm);
 	/*
 	Adding this return to squeltch compilation warning.
 	Cory should review this code
@@ -172,17 +175,17 @@ int was_updated(char *target)
 }
 
 
-int needs_update(char *target)
+int needs_update(sqlite3 *db, const char *tmfile, char *target)
 {
-	char *cachefile = NULL;
 	unsigned char digest[CRYPTO_HASH_SIZE];
-	char oldhash[CRYPTO_HASH_STRING_LENGTH];
+	const char *oldhash = NULL;
 	char newhash[CRYPTO_HASH_STRING_LENGTH];
 	target_list *deps = NULL;
 	tm_rule *rule = NULL;
-
-	cachefile = malloc(strlen(TM_CACHE) + strlen(target) + 2);
-	sprintf(cachefile, TM_CACHE "/%s", target);
+	const char *fmt = "SELECT Hash FROM TMCache WHERE TMakefile = ? AND Target = ?";
+	const char *stmtail = NULL;
+	sqlite3_stmt *stm = NULL;
+	int sqlrc;
 
 	rule = find_rule(target, tm_rules);
 
@@ -196,62 +199,53 @@ int needs_update(char *target)
 		}
 	}
 
+	sqlrc = sqlite3_prepare(db, fmt, -1, &stm, &stmtail);
+	if (sqlrc != SQLITE_OK) {
+		fprintf(stderr, "WARNING: Unable to prepare database statement.\n"
+		                "         Assuming %s needs update.\n", target);
+		return 1;
+	}
+
+	sqlite3_bind_text(stm, 1, tmfile, -1, SQLITE_TRANSIENT);
+	sqlite3_bind_text(stm, 2, target, -1, SQLITE_TRANSIENT);
+	sqlrc = sqlite3_step(stm);
+	if (sqlrc != SQLITE_ROW) {
+		/* There was no row in the cache for this target, so update it */
+		goto yes;
+	}
+
+	oldhash = (const char *)sqlite3_column_text(stm, 1);
+	if (!oldhash) {
+		fprintf(stderr, "WARNING: Error getting cache for target %s\n", target);
+		goto yes;
+	}
+
 	if (rule->type == TM_EXPLICIT) {
-		if (file_exists(cachefile)) {
-			FILE *fp = NULL;
-
-			fp = fopen(cachefile, "r");
-			fread(oldhash, 1, CRYPTO_HASH_STRING_LENGTH, fp);
-			fclose(fp);
-			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
-
-			TM_CRYPTO_HASH_DATA(rule->recipe, digest);
-			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-			if (strcmp(oldhash, newhash) == 0) {
-				goto no;
-			} else {
-				goto yes;
-			}
-		} else {
-			goto yes;
-		}
+		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
 	} else if (rule->type == TM_FILENAME) {
-		if (file_exists(cachefile)) {
-			FILE *fp = NULL;
+		TM_CRYPTO_HASH_FILE(target, digest);
+	}
 
-			fp = fopen(cachefile, "r");
-			fread(oldhash, 1, CRYPTO_HASH_STRING_LENGTH, fp);
-			fclose(fp);
-			oldhash[CRYPTO_HASH_STRING_LENGTH-1] = '\0';
-
-			TM_CRYPTO_HASH_FILE(target, digest);
-			TM_CRYPTO_HASH_TO_STRING(digest, newhash);
-
-			if (strcmp(oldhash, newhash) == 0) {
-				goto no;
-			} else {
-				goto yes;
-			}
-		} else {
-			goto yes;
-		}
+	if (strcmp(oldhash, newhash) == 0) {
+		goto no;
+	} else {
+		goto yes;
 	}
 
 	no:
-		free(cachefile);
+		sqlite3_finalize(stm);
 		return 0;
 	yes:
-		free(cachefile);
+		sqlite3_finalize(stm);
 		return 1;
 }
 
-target_list *need_update(target_list *targets)
+target_list *need_update(sqlite3 *db, const char *tmfile, target_list *targets)
 {
 	target_list *oodate = NULL;
 
 	for (; targets; targets = targets->next) {
-		if (needs_update(targets->name)) {
+		if (needs_update(db, tmfile, targets->name)) {
 			oodate = target_cons(targets->name, oodate);
 		}
 	}
@@ -271,7 +265,7 @@ void wrap(Jim_Interp *interp, int error) {
 }
 
 
-void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
+void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_list *sorted_rules, int force)
 {
 	if (!sorted_rules) {
 		/* nothing to do */
@@ -283,18 +277,18 @@ void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
 		if (rule->type == TM_EXPLICIT) {
 			/* If the rule has a recipe and needs an update */
 			if (rule->recipe
-			&&  (force || needs_update(rule->target))) {
+			&&  (force || needs_update(db, tmfile, rule->target))) {
 				/* Execute the recipe for the current rule */
 				const char *fmt = "recipe::%s {%s} {%s} {%s}";
 				int len = 0;
 				char *cmd = NULL;
 				char *target = rule->target;
 				char *inputs = target_list_to_string(rule->deps);
-				target_list *oodate_deps = need_update(rule->deps);
+				target_list *oodate_deps = need_update(db, tmfile, rule->deps);
 				char *oodate = target_list_to_string(oodate_deps);
 				tm_rule_list *oodate_rules = find_rules(oodate_deps, tm_rules);
 
-				update_rules(interp, oodate_rules, force);
+				update_rules(db, interp, tmfile, oodate_rules, force);
 
 				printf("Making target %s:\n", rule->target);
 				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
@@ -304,7 +298,7 @@ void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
 				free(cmd);
 				free(oodate);
 				free(inputs);
-				update(rule->target);
+				update(db, tmfile, rule->target);
 				rule->type = TM_UPDATED;
 				printf("\n");
 			} else {
@@ -313,11 +307,11 @@ void update_rules(Jim_Interp *interp, tm_rule_list *sorted_rules, int force)
 		} else if (rule->type == TM_FILENAME) {
 			/* Check that the file actually exists */
 			if (!file_exists(rule->target)) {
-				fprintf(stderr, "ERROR: Unable to find rule for target %s", rule->target);
+				fprintf(stderr, "ERROR: Unable to find rule for target %s\n", rule->target);
 				exit(EXIT_FAILURE);
 			}
-			if (force || needs_update(rule->target)) {
-				update(rule->target);
+			if (force || needs_update(db, tmfile, rule->target)) {
+				update(db, tmfile, rule->target);
 				rule->type = TM_UPDATED;
 			}
 		}
@@ -341,6 +335,9 @@ int main(int argc, char **argv)
 	tm_rule_list *sorted_rules = NULL;
 
 	Jim_Interp *interp = NULL;
+	sqlite3 *db = NULL;
+	int sqlrc = 0;
+	char *sqlerr = NULL;
 
 	int i;
 	
@@ -446,8 +443,6 @@ int main(int argc, char **argv)
 		retval = EXIT_FAILURE;
 	}
 
-	wrap(interp, Jim_Eval(interp, "file mkdir " TM_CACHE));
-
 	goal = goal ? goal : tm_goal;
 
 	if (!target_exists(goal, get_targets(tm_rules))) {
@@ -462,7 +457,34 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	update_rules(interp, sorted_rules, force_update);
+	sqlrc = sqlite3_open(TM_CACHE, &db);
+	if (sqlrc != SQLITE_OK) {
+		fprintf(stderr, "ERROR: Unable to open " TM_CACHE " database\n");
+		exit(EXIT_FAILURE);
+	}
+
+	sqlrc = sqlite3_exec(db,
+		"CREATE TABLE IF NOT EXISTS TMCache ("
+			"TMakefile    TEXT,"
+			"Target       TEXT,"
+			"Hash         TEXT"
+		")",
+		NULL, NULL, &sqlerr
+	);
+
+	if (sqlrc != SQLITE_OK) {
+		fprintf(stderr, "ERROR: Unable to create database schema: %s", sqlerr);
+		sqlite3_free(sqlerr);
+		exit(EXIT_FAILURE);
+	}
+	sqlite3_free(sqlerr);
+
+	update_rules(db, interp, filename, sorted_rules, force_update);
+
+	sqlrc = sqlite3_close(db);
+	if (sqlrc != SQLITE_OK) {
+		fprintf(stderr, "WARNING: Exiting while " TM_CACHE " database is busy\n");
+	}
 
 	/* Free the Tcl interpreter */
 	Jim_FreeInterp(interp);

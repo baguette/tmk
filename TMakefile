@@ -7,7 +7,7 @@ param JIMFLAGS = [options { --disable-lineedit
                             --math
                             --disable-docs
                             --without-ext="eventloop history load syslog"
-                            --with-ext="binary tclprefix"
+                            --with-ext="binary tclprefix sqlite3"
                           }]
 
 proc cc args {
@@ -31,7 +31,14 @@ rule jim {} {
 	cd jimtcl
 	exec ./configure {*}$JIMFLAGS
 	exec make
-	cd .. 
+	
+	cd sqlite3
+	exec gcc -o sqlite3.o -c sqlite3.c \
+	   -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_THREADSAFE=0 \
+	   -DSQLITE_DEFAULT_FILE_FORMAT=4 -DSQLITE_ENABLE_STAT3 \
+	   -DSQLITE_ENABLE_LOCKING_STYLE=0 -DSQLITE_OMIT_INCRBLOB
+
+	cd ../..
 }
 
 set H_SRC "tm_crypto.h tm_target.h tm_core_cmds.h tm_ext_cmds.h"
@@ -48,6 +55,6 @@ rule tmake {jim $C_SRC $H_SRC} {
 	set ARCH  [tcl::exec uname -m]
 
 	cc -o $TARGET -Ijimtcl -DTM_OPSYS="$OPSYS" -DTM_MACHINE_ARCH="$ARCH" \
-	   {*}$C_SRC jimtcl/libjim.a -lm
+	   {*}$C_SRC jimtcl/libjim.a jimtcl/sqlite3/sqlite3.o -lm
 }
 
