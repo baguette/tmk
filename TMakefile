@@ -26,6 +26,7 @@ proc make-c-ext {tclfile cfile} {
 rule all {tmake}
 
 rule jim {} {
+	global CC
 	global JIMFLAGS
 
 	cd jimtcl
