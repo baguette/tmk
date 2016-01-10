@@ -55,7 +55,8 @@ rule tmake {jim $C_SRC $H_SRC} {
 	set OPSYS [tcl::exec uname -s]
 	set ARCH  [tcl::exec uname -m]
 
-	cc -o $TARGET -Ijimtcl -DTM_OPSYS="$OPSYS" -DTM_MACHINE_ARCH="$ARCH" \
+	cc -o $TARGET -Ijimtcl -Ijimtcl/sqlite3 \
+	   -DTM_OPSYS="$OPSYS" -DTM_MACHINE_ARCH="$ARCH" \
 	   {*}$C_SRC jimtcl/libjim.a jimtcl/sqlite3/sqlite3.o -lm
 }
 
