@@ -1,0 +1,6 @@
+
+rule test {} {
+	global TM_PLATFORM
+	puts "$TM_PLATFORM"
+}
+

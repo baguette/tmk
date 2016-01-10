@@ -1,3 +1,9 @@
+
+# TODO: These won't work on Windows
+set TM_OPSYS [exec uname -s]
+set TM_MACHINE_ARCH [exec uname -m]
+set TM_PLATFORM "$TM_OPSYS-$TM_MACHINE_ARCH"
+
 # Check if a variable var is defined
 proc defined {var} {
 	global $var
@@ -76,6 +82,7 @@ rename exec tcl::exec
 
 proc exec args {
 	global TM_NO_EXECUTE
+	global TM_SILENT_MODE
 	set flags ""
 	set echo 1
 	set errexit 1
@@ -109,7 +116,7 @@ proc exec args {
 
 	set rest [lrange $args $start end]
 	
-	if {$echo} {
+	if {$echo && ![defined TM_SILENT_MODE]} {
 		puts "$rest"
 		flush stdout
 	}
