@@ -160,7 +160,7 @@ proc sub {from to recipe} {
 	foreach in [glob *$from] {
 		set out [replace-ext $in $from $to]
 		rule $out $in $recipe
-		set OUT "$OUT $out"
+		lappend OUT $out
 	}
 
 	return $OUT
