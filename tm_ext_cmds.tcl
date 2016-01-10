@@ -1,7 +1,4 @@
 
-# TODO: These won't work on Windows
-set TM_OPSYS [exec uname -s]
-set TM_MACHINE_ARCH [exec uname -m]
 set TM_PLATFORM "$TM_OPSYS-$TM_MACHINE_ARCH"
 
 # Check if a variable var is defined

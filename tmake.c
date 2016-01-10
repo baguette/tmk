@@ -14,6 +14,14 @@
 #define TM_CACHE ".tmcache"
 #define DEFAULT_FILE "TMakefile"
 
+#ifndef TM_OPSYS
+	#define TM_OPSYS "Unknown"
+#endif
+
+#ifndef TM_MACHINE_ARCH
+	#define TM_MACHINE_ARCH "Unknown"
+#endif
+
 const char *DEFAULT_INC_PATH[] = {
 	".",
 	"/usr/lib/tmake/include",
@@ -383,6 +391,10 @@ int main(int argc, char **argv)
 
 	/* Initialize any static extensions */
 	Jim_InitStaticExtensions(interp);
+
+	/* Initialize the Tcl TMake commands */
+	wrap(interp, Jim_Eval(interp, "set TM_OPSYS " TM_OPSYS));
+	wrap(interp, Jim_Eval(interp, "set TM_MACHINE_ARCH " TM_MACHINE_ARCH));
 	wrap(interp, Jim_tm_ext_cmdsInit(interp));
 
 	register_search_paths(interp, also_include, also_package);

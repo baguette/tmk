@@ -44,6 +44,10 @@ rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
 rule tmake {jim $C_SRC $H_SRC} {
 	global C_SRC
 
-	cc -o $TARGET -Ijimtcl {*}$C_SRC jimtcl/libjim.a -lm
+	set OPSYS [tcl::exec uname -s]
+	set ARCH  [tcl::exec uname -m]
+
+	cc -o $TARGET -Ijimtcl -DTM_OPSYS="$OPSYS" -DTM_MACHINE_ARCH="$ARCH" \
+	   {*}$C_SRC jimtcl/libjim.a -lm
 }
 

@@ -27,4 +27,9 @@ echo "$MAKE_C_EXT > tm_ext_cmds.c"
 echo "#define JIM_EMBEDDED" > tm_ext_cmds.c
 $MAKE_C_EXT >> tm_ext_cmds.c
 
-run $CC -o tmake $CFLAGS -Ijimtcl $C_SRC jimtcl/libjim.a -lm
+TM_OPSYS=$(uname -s)
+TM_MACHINE_ARCH=$(uname -m)
+
+run $CC -o tmake $CFLAGS -Ijimtcl \
+        -DTM_OPSYS="\"$TM_OPSYS\"" -DTM_MACHINE_ARCH="\"$TM_MACHINE_ARCH\"" \
+        $C_SRC jimtcl/libjim.a -lm
