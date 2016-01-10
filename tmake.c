@@ -477,7 +477,6 @@ int main(int argc, char **argv)
 		sqlite3_free(sqlerr);
 		exit(EXIT_FAILURE);
 	}
-	sqlite3_free(sqlerr);
 
 	update_rules(db, interp, filename, sorted_rules, force_update);
 

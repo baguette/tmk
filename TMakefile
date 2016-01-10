@@ -33,7 +33,7 @@ rule jim {} {
 	exec make
 	
 	cd sqlite3
-	exec gcc -o sqlite3.o -c sqlite3.c \
+	exec $CC -o sqlite3.o -c sqlite3.c \
 	   -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_THREADSAFE=0 \
 	   -DSQLITE_DEFAULT_FILE_FORMAT=4 -DSQLITE_ENABLE_STAT3 \
 	   -DSQLITE_ENABLE_LOCKING_STYLE=0 -DSQLITE_OMIT_INCRBLOB
