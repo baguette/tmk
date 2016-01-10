@@ -16,7 +16,7 @@ run() {
              --math \
              --disable-docs \
              --without-ext="eventloop history load syslog" \
-             --with-ext="binary tclprefix sqlite3" \
+             --with-ext="binary tclprefix" \
  ;
  make;
 

@@ -468,6 +468,7 @@ int main(int argc, char **argv)
 			"TMakefile    TEXT,"
 			"Target       TEXT,"
 			"Hash         TEXT"
+		"UNIQUE (TMakefile, Target) ON CONFLICT REPLACE"
 		")",
 		NULL, NULL, &sqlerr
 	);
