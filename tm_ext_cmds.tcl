@@ -152,3 +152,17 @@ proc replace-ext {files x y} {
 	return $ys
 }
 
+
+# Define a substitution rule.  Returns a list of all the targets created.
+proc sub {from to recipe} {
+	set OUT {}
+
+	foreach in [glob *$from] {
+		set out [replace-ext $in $from $to]
+		rule $out $in $recipe
+		set OUT "$OUT $out"
+	}
+
+	return $OUT
+}
+

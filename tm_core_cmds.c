@@ -29,8 +29,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return (JIM_ERR);
 	}
 
-	/* Perform variable substitution in the target and dependency lists */
-	Jim_SubstObj(interp, argv[1], &target_subst, 0);
+	/* Perform variable substitution in the dependency lists */
 	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
 
 	/* If we've got a recipe, store it */
@@ -46,6 +45,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 		deps = target_cons(sdep, deps);
 	}
+
+	/* Perform variable substitution in the target list */
+	Jim_SubstObj(interp, argv[1], &target_subst, 0);
 
 	/* For each target in the list, create a rule and a proc */
 	numtargs = Jim_ListLength(interp, target_subst);

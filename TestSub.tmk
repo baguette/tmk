@@ -1,0 +1,7 @@
+
+rule all foo
+
+set O_FILES [sub .c .o { puts "$TARGET: $INPUTS" }]
+
+rule foo $O_FILES
+
