@@ -33,7 +33,7 @@ syn keyword tmkCommand		trace unknown unload unset update uplevel upvar variable
 
 " TMake-specific commands
 syn keyword tmkCommand		rule param target make commands exists defined
-syn keyword tmkCommand		vpath pattern empty tmk::exec include
+syn keyword tmkCommand		empty tcl::exec include sub replace-ext
 
 " The 'tcl Standard Library' commands: http://www.tcl.tk/man/tcl8.5/tclCmd/library.htm
 syn keyword tmkCommand		auto_execok auto_import auto_load auto_mkindex auto_mkindex_old
