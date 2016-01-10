@@ -225,6 +225,7 @@ int needs_update(sqlite3 *db, const char *tmfile, char *target)
 	} else if (rule->type == TM_FILENAME) {
 		TM_CRYPTO_HASH_FILE(target, digest);
 	}
+	TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
 	if (strcmp(oldhash, newhash) == 0) {
 		goto no;
@@ -467,8 +468,8 @@ int main(int argc, char **argv)
 		"CREATE TABLE IF NOT EXISTS TMCache ("
 			"TMakefile    TEXT,"
 			"Target       TEXT,"
-			"Hash         TEXT"
-		"UNIQUE (TMakefile, Target) ON CONFLICT REPLACE"
+			"Hash         TEXT,"
+		"CONSTRAINT OneFileTarget UNIQUE (TMakefile, Target) ON CONFLICT REPLACE"
 		")",
 		NULL, NULL, &sqlerr
 	);
