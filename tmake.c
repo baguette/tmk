@@ -224,7 +224,6 @@ int needs_update(sqlite3 *db, const char *tmfile, char *target)
 		TM_CRYPTO_HASH_DATA(rule->recipe, digest);
 	} else if (rule->type == TM_FILENAME) {
 		TM_CRYPTO_HASH_FILE(target, digest);
-		free_rule(rule);
 	}
 	TM_CRYPTO_HASH_TO_STRING(digest, newhash);
 
