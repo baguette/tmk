@@ -448,8 +448,8 @@ int main(int argc, char **argv)
 
 	goal = goal ? goal : tm_goal;
 
-	if (!target_exists(goal, get_targets(tm_rules))) {
-		fprintf(stderr, "ERROR: goal target %s not defined\n", goal);
+	if (!find_rule(goal, tm_rules)) {
+		fprintf(stderr, "ERROR: No rule for goal %s\n", goal);
 		exit(EXIT_FAILURE);
 	}
 
