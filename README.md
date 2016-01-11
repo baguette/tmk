@@ -2,6 +2,11 @@
 
 A portable `make` replacement with the full power of Tcl at your fingertips.
 
+<a href="https://scan.coverity.com/projects/tmake">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/7553/badge.svg"/>
+</a>
+
 
 ## Powered By
 
