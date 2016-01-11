@@ -73,7 +73,7 @@ rule doc-html $DOCS {
 
 rule doc-pdf $DOCS {
 	exec pandoc -f html -t latex -o doc/Jim_Tcl.pdf jimtcl/Tcl_shipped.html
-	exec pandoc -f mardown_github -t latex -o doc/refman.pdf doc/refman.md
+	exec pandoc -f markdown_github -t latex -o doc/refman.pdf doc/refman.md
 }
 
 rule doc-all {doc-html doc-pdf}
