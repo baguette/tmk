@@ -1,0 +1,7 @@
+
+rule test {} {
+	set xs [glob *.c]
+	puts $xs
+	puts [replace-ext $xs .c .o]
+}
+

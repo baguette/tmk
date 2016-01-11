@@ -55,9 +55,19 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		Jim_Obj *target_obj = Jim_ListGetIndex(interp, target_subst, i);
 		char *target = target_copy(Jim_String(target_obj));
 
-		/* create a rule for this target */
-		rule = new_rule(target, deps, recipe);
-		tm_rules = rule_cons(rule, tm_rules);
+		/* check if there's already a rule for this target */
+		rule = find_rule(target, tm_rules);
+		if (rule) {
+			/* if so, overwrite it with the new rule */
+			free_target_list(rule->deps);
+			free(rule->recipe);
+			rule->target = target;
+			rule->recipe = recipe;
+		} else {
+			/* or else create a new rule */
+			rule = new_rule(target, deps, recipe);
+			tm_rules = rule_cons(rule, tm_rules);
+		}
 
 		/* Do we need to set the default goal? */
 		if (tm_goal == NULL) {

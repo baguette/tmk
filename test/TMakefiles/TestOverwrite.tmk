@@ -1,0 +1,9 @@
+
+rule test {} {
+	puts "Not overwritten"
+}
+
+rule test {} {
+	puts "Overwritten"
+}
+
