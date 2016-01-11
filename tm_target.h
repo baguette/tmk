@@ -1,6 +1,8 @@
 #ifndef TM_TARGET_H
 #define TM_TARGET_H
 
+#include "tmake.h"
+
 #define TM_EXPLICIT 0
 #define TM_IMPLICIT 1
 #define TM_FILENAME 2
@@ -37,6 +39,7 @@ tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next);
 
 int target_exists(char *target, target_list *targets);
 tm_rule *find_rule(char *name, tm_rule_list *rules);
+tm_rule *find_rule_or_file(char *target, tm_rule_list *rules);
 tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules);
 
 tm_rule_list *topsort(char *target, tm_rule_list *rules);

@@ -3,8 +3,8 @@
 # TODO: Is this a bashism?
 set -e
 
-CC=${CC:-gcc}
-CFLAGS=${CFLAGS:- -ansi -Wall -g -O2}
+CC=${CC:-clang}
+CFLAGS=${CFLAGS:- -ansi -Wall -Wextra -g -O2}
 
 run() {
 	echo "$@"

@@ -8,21 +8,12 @@
 #define JIM_EMBEDDED
 #include <jim.h>
 
+#include "tmake.h"
 #include "tm_target.h"
 #include "tm_crypto.h"
 #include "tm_core_cmds.h"
 #include "tm_ext_cmds.h"
 
-#define TM_CACHE ".tmcache"
-#define DEFAULT_FILE "TMakefile"
-
-#ifndef TM_OPSYS
-	#define TM_OPSYS "Unknown"
-#endif
-
-#ifndef TM_MACHINE_ARCH
-	#define TM_MACHINE_ARCH "Unknown"
-#endif
 
 const char *DEFAULT_INC_PATH[] = {
 	".",
@@ -48,27 +39,26 @@ int file_exists(const char *filename)
 	return 0;
 }
 
-void usage(int argc, char **argv)
+void usage(const char *progname)
 {
-	printf("usage: %s [options] [target]\n", argv[0]);
+	printf("usage: %s [options] [target]\n", progname);
 	printf("\n");
-	printf("options:\n"
-	" -f <TMakefile>    Process <TMakefile>\n"
-	" -n                Display commands that would be executed without\n"
-	"                   actually executing any commands.\n"
-	" -I <path>         Add <path> to the list of directories to search\n"
-	"                   for include files.\n"
-	" -P <path>         Add <path> to the list of directories to search\n"
-	"                   for TMake packages.\n"
-	" -D <param>        Define <param> for the execution of TMakefile\n"
-	" -V <var>          Display the value of variable <var> without\n"
-	"                   executing any commands.\n"
-	" -e                Initialize the values of parameters from corresponding\n"
-	"                   environment variables.\n"
-	" -u                Force update of target even if it is not out of date.\n"
-	" -s                Only output errors, if anything at all.\n"
-	" PARAM=VALUE       Set the parameter PARAM to VALUE.\n"
-	);
+	printf("options:\n");
+	printf(" -f <TMakefile>    Process <TMakefile>\n");
+	printf(" -n                Display commands that would be executed without\n"
+	       "                   actually executing any commands.\n");
+	printf(" -I <path>         Add <path> to the list of directories to search\n"
+	       "                   for include files.\n");
+	printf(" -P <path>         Add <path> to the list of directories to search\n"
+	       "                   for TMake packages.\n");
+	printf(" -D <param>        Define <param> for the execution of TMakefile\n");
+	printf(" -V <var>          Display the value of variable <var> without\n"
+	       "                   executing any commands.\n");
+	printf(" -e                Initialize the values of parameters from corresponding\n"
+	       "                   environment variables.\n");
+	printf(" -u                Force update of target even if it is not out of date.\n");
+	printf(" -s                Only output errors, if anything at all.\n");
+	printf(" PARAM=VALUE       Set the parameter PARAM to VALUE.\n");
 	exit(1);
 }
 
@@ -77,7 +67,7 @@ char *get(int arg, int argc, char **argv)
 	if (arg < argc)
 		return argv[arg];
 
-	usage(argc, argv);
+	usage(argv[0]);
 	return NULL;
 }
 
@@ -162,7 +152,7 @@ int update(sqlite3 *db, const char *tmfile, char *target)
 	}
 	sqlite3_finalize(stm);
 	/*
-	Adding this return to squeltch compilation warning.
+	Adding this return to squelch compilation warning.
 	Cory should review this code
 	*/
 	return (JIM_OK);
@@ -369,7 +359,7 @@ int main(int argc, char **argv)
 					also_package = target_cons(get(++i, argc, argv), also_package);
 					break;
 				default:
-					usage(argc, argv);
+					usage(argv[0]);
 					break;
 			}
 		} else if (strstr(argv[i], "=")) {
@@ -377,7 +367,7 @@ int main(int argc, char **argv)
 		} else if (goal == NULL) {
 			goal = argv[i];
 		} else {
-			usage(argc, argv);
+			usage(argv[0]);
 		}
 	}
 
@@ -453,7 +443,15 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+/*
+	printf("tm_rules = ");
+	print_rule_list(tm_rules);
+*/
 	sorted_rules = topsort(goal, tm_rules);
+/*
+	printf("sorted_rules = ");
+	print_rule_list(sorted_rules);
+*/
 
 	if (!sorted_rules) {
 		fprintf(stderr, "ERROR: Could not find rule to make %s\n", goal);

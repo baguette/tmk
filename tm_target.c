@@ -123,6 +123,13 @@ tm_rule *find_rule(char *target, tm_rule_list *rules)
 		node = node->next;
 	}
 
+	return rule;
+}
+
+tm_rule *find_rule_or_file(char *target, tm_rule_list *rules)
+{
+	tm_rule *rule = find_rule(target, rules);
+	
 	if (!rule) {
 		rule = new_filename(target);
 	}
@@ -136,7 +143,7 @@ tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 	target_list *node = targets;
 
 	while (node) {
-		mapped = rule_cons(find_rule(node->name, rules), mapped);
+		mapped = rule_cons(find_rule_or_file(node->name, rules), mapped);
 		node = node->next;
 	}
 
@@ -205,7 +212,7 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules)
 {
 	tm_rule_list *sorted = NULL;
 	tm_rule_list *rev = NULL;
-	tm_rule *rule = find_rule(target, rules);
+	tm_rule *rule = find_rule_or_file(target, rules);
 
 	if (rule == NULL)
 		return NULL;
@@ -269,13 +276,35 @@ char *target_list_to_string(target_list *targets)
 
 void print_rule_list(tm_rule_list *rules)
 {
-	tm_rule_list *node = rules;
+	tm_rule_list *node;
 	
-	while (node) {
-		printf("%s ", node->rule->target);
-		node = node->next;
-	}
+	printf("{\n");
+	for (node = rules; node; node = node->next) {
+		target_list *deps;
 
-	printf("\n");
+		printf("\t%s: ", node->rule->target);
+		for (deps = node->rule->deps; deps; deps = deps->next) {
+			printf("%s ", deps->name);
+		}
+		switch (node->rule->type) {
+			case TM_EXPLICIT:
+				printf("(explicit)");
+				break;
+			case TM_IMPLICIT:
+				printf("(implicit)");
+				break;
+			case TM_FILENAME:
+				printf("(filename)");
+				break;
+			default:
+				printf("(UNKNOWN)");
+				break;
+		}
+		if (node->rule->recipe) {
+			printf("(recipe)");
+		}
+		printf("\n");
+	}
+	printf("}\n");
 }
 

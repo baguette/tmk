@@ -63,6 +63,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			free(rule->recipe);
 			rule->target = target;
 			rule->recipe = recipe;
+			rule->type = TM_EXPLICIT;
 		} else {
 			/* or else create a new rule */
 			rule = new_rule(target, deps, recipe);

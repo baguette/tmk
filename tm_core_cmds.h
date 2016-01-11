@@ -4,7 +4,7 @@
 #define JIM_EMBEDDED
 #include <jim.h>
 
-#define TM_INCLUDE_PATH "TM_INCLUDE_PATH"
+#include "tmake.h"
 
 void tm_RegisterCoreCommands(Jim_Interp *interp);
 
