@@ -323,6 +323,7 @@ int main(int argc, char **argv)
 	target_list *also_include = NULL;
 	target_list *also_package = NULL;
 	target_list *parameters = NULL;
+	target_list *defines = NULL;
 
 	int retval = EXIT_SUCCESS;
 	tm_rule_list *sorted_rules = NULL;
@@ -358,6 +359,9 @@ int main(int argc, char **argv)
 				case 'P':
 					also_package = target_cons(get(++i, argc, argv), also_package);
 					break;
+				case 'D':
+					defines = target_cons(get(++i, argc, argv), defines);
+					break;
 				default:
 					usage(argv[0]);
 					break;
@@ -390,19 +394,29 @@ int main(int argc, char **argv)
 	register_search_paths(interp, also_include, also_package);
 
 	/* Initialize commandline parameters */
-	while (parameters) {
+	for (; parameters; parameters = parameters->next) {
 		char *var = strtok(parameters->name, "=");
 		char *val = strtok(NULL, "\0");
 
-		char *buf = NULL;
-		int len = strlen(var) + strlen(val) + strlen("set {TM_PARAM()} {}") + 1;
-		buf = malloc(len);
-		sprintf(buf, "set {TM_PARAM(%s)} {%s}", var, val);
+		const char *fmt = "set {TM_PARAM(%s)} {%s}";
+		int len = strlen(var) + strlen(val) + strlen(fmt) + 1;
+		char *cmd = malloc(len);
 
-		wrap(interp, Jim_Eval(interp, buf));
+		sprintf(cmd, fmt, var, val);
+		wrap(interp, Jim_Eval(interp, cmd));
 
-		free(buf);
-		parameters = parameters->next;
+		free(cmd);
+	}
+
+	for (; defines; defines = defines->next) {
+		const char *fmt = "set {%s} 1";
+		int len = strlen(defines->name) + strlen(fmt) + 1;
+		char *cmd = malloc(len);
+
+		sprintf(cmd, fmt, defines->name);
+		wrap(interp, Jim_Eval(interp, cmd));
+
+		free(cmd);
 	}
 
 	if (env_lookup) {

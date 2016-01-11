@@ -52,6 +52,10 @@ void tm_CryptoHashData(const unsigned char* data, unsigned char digest[CRYPTO_HA
     /* Context to hold SHA1 hash */
     SHA1_CTX     sha_ctx;
 
+    if (!data) {
+		data = (BYTE *)"";
+	}
+
 	pBuff = (unsigned char*)&data[0];
 	len = strlen((char*)data);
 
