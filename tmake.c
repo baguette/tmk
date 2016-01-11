@@ -118,9 +118,9 @@ int update(sqlite3 *db, const char *tmfile, char *target)
 	sqlite3_stmt *stm = NULL;
 	const char *stmtail;
 	int sqlrc;
-	
-	rule = find_rule(target, tm_rules);
-	
+
+	rule = find_rule_or_file(target, tm_rules);
+
 	if (!rule) {
 		return (JIM_ERR);
 	}
@@ -177,7 +177,7 @@ int needs_update(sqlite3 *db, const char *tmfile, char *target)
 	sqlite3_stmt *stm = NULL;
 	int sqlrc;
 
-	rule = find_rule(target, tm_rules);
+	rule = find_rule_or_file(target, tm_rules);
 
 	if (!rule) {
 		goto yes;
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 	char *sqlerr = NULL;
 
 	int i;
-	
+
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
