@@ -165,18 +165,20 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 		rule->mark = TM_TEMPORARY;
 		deps = find_rules(rule->deps, rules);
 		
-		while (deps) {
+		for (; deps; deps = deps->next) {
 			int n;
 
 			n = topsort_visit(deps->rule, rules, sorted);
 
-			if (n < 0)
+			if (n < 0) {
+				free_rule_list(deps);
 				return n;
-			deps = deps->next;
+			}
 		}
 
 		rule->mark = TM_PERMANENT;
 		*sorted = rule_cons(rule, *sorted);
+		free_rule_list(deps);
 	}
 
 	return 0;
@@ -187,9 +189,8 @@ tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 	tm_rule_list *rev = NULL;
 	tm_rule_list *node = rules;
 
-	while (node) {
+	for (; node; node = node->next) {
 		rev = rule_cons(node->rule, rev);
-		node = node->next;
 	}
 
 	return rev;
@@ -200,9 +201,8 @@ target_list *target_list_reverse(target_list *targets)
 	target_list *rev = NULL;
 	target_list *node = targets;
 
-	while (node) {
+	for (; node; node = node->next) {
 		rev = target_cons(node->name, rev);
-		node = node->next;
 	}
 
 	return rev;
