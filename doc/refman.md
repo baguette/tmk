@@ -20,7 +20,7 @@ This reference manual makes use of the following terms:
 * **command** or **procedure** - A unit of execution that performs a small task when supplied with required information (arguments).
 * **variable** - A named storage location containing a value.
 * **rule variable** - While TMakefile authors are free to define new variables, several variables are always available within a recipe:  TARGET (the target of the rule), INPUTS (the list of dependencies), and OODATE (a list of only those dependencies which have been deemed out of date).  These variables are known as *rule variables*.
-* **explicit and implicit rules** - All rules defined by the `rule` command are *explicit*. Some commands (such as `pattern`) define *implicit* rules. The only difference is in how TMake determines which rule to use to construct a given target. When looking for a rule to construct a target, TMake first looks for an explicit rule that matches the target. If an explicit rule is found, TMake stops the search and uses it to construct the target, or else TMake continues by looking for an implicit rule.  If an implicit rule is found, TMake stops the search and uses it to construct the target, or else TMake continues by looking for a file whose name matches the target.  If no such file is found, TMake reports an error.  Any given target may have more than one rule associated with it, but only the first rule found will be used.
+* **explicit and implicit rules** - All rules defined by the `rule` command are *explicit*.  Rules automatically inferred for filename targets are *implicit*.  The only difference is in how TMake determines which rule to use to construct a given target. When looking for a rule to construct a target, TMake first looks for an explicit rule that matches the target. If an explicit rule is found, TMake stops the search and uses it to construct the target, or else TMake continues by looking for an implicit rule.  If an implicit rule is found (i.e., the name of an existing file in the search path), TMake stops the search and uses it to construct the target, or else TMake reports an error.  Any given target may have more than one rule associated with it (a target may have both an explicit rule *and* an implicit rule), but only the first rule found during the search will be used.
 
 
 ## Example
@@ -72,6 +72,32 @@ The following rule variables are available in recipes:
 * `TARGET`: The name of the target.
 * `INPUTS`: The full list of target dependencies.
 * `OODATE`: The list of dependencies that have been deemed out of date by TMake.
+
+After a rule has been defined for a target, any subsequent rules defined for that same target will silently overwrite the previous rule (unless `-w` is specified on the command line, in which case a warning will be issued).
+
+Recipes are scoped the same way `proc` bodies are.  That means global variables need to be declared with the `global` command before they can be referenced, just as with `proc`.
+
+### sub
+
+**`sub `** *`from-extension to-extension recipe`*
+
+Define a *substitution rule* for files matching *`from-extension`*.  A substitution rule is one defined by replacing the file extensions on a filename.  The **`sub`** command finds all files with extension *`from-extension`* and creates targets for files with the same name except that *`from-extension`* has been replaced with *`to-extension`*.  The **`sub`** command returns a list of all targets that were created.
+
+#### Example
+
+To create a rule to compile all `*.c` files into `*.o` files in the current directory, the folllowing substitution rule can be used:
+
+    set O_FILES [sub .c .o {
+                   global CC CFLAGS
+                   exec $CC $CFLAGS -o $TARGET -c $INPUTS
+                 }]
+
+The resulting targets can then be used as the dependency for another rule that links all the `*.o` files into an executable:
+
+    rule program {$O_FILES} {
+	  global CC CFLAGS
+	  exec $CC $CFLAGS -o $TARGET $INPUTS
+	}
 
 ### param
 
@@ -129,13 +155,26 @@ Returns 1 if *`string`* is the empty string, or else returns 0.
 
 Returns 1 if the target *`target`* has an associated recipe, or else returns 0.
 
+### replace-ext
 
-## Predefined variables
+**`replace-ext `** *`files from-extension to-extension`*
 
-* `TM_CURRENT_GOAL` - The goal of this execution of the TMakefile.
+Takes a list of filenames and returns a list of filenames where all filenames in the original list with an extension matching *`from-extension`* have been replaced with a matching filename with extension *`to-extension`*.
+
+#### Example
+
+    set O_FILES [replace-ext [glob *.c] .c .o]
+
+
+
+## Predefined global variables
+
+* `TM_CURRENT_GOAL` - The goal of this execution of the TMakefile if it has been determined already.
 * `TM_PARAM` - An array of parameters that were overridden on the command line.
 * `TM_NO_EXECUTE` - Set to 1 if `-n` was specified on the command line.
 * `TM_SILENT_MODE` - Set to 1 if `-s` was specified on the command line.
 * `TM_ENV_LOOKUP` - Set to 1 if `-e` was specified on the command line.
+* `TM_OPSYS` - The operating system `tmake` was built for.
 * `TM_MACHINE_ARCH` - The architecture of the machine `tmake` was built for.
+* `TM_PLATFORM` - Same as `"$TM_OPSYS-$TM_MACHINE_ARCH"`.
 
