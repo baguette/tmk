@@ -10,6 +10,3 @@ echo
 echo "Building tmake only with clang-analyzer"
 scan-build $@ -o clang-int $TMAKE_BUILD
 
-echo
-echo "Report generated at clang-int/index.html"
-echo
