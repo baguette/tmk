@@ -5,6 +5,18 @@ Copyright (c) 2016 Cory Burgett
 TMake is a build automation tool intended to be a portable, flexible, and familiar replacement for UNIX `make`, providing the full power of a general-purpose scripting language (Tcl).  The TMake distribution is completely self-contained:  the only prerequisite is an ANSI C compiler.  TMake was designed and developed by Cory Burgett and Andre van Schalkwyk, and released under the 2-clause BSD license.
 
 
+## Acknowledgements
+
+* The authors of [Jim Tcl](http://jim.tcl.tk/), a small-footprint Tcl implementation at the heart of TMake.
+* Brad Conte, the original author of the [SHA-1 implementation](https://github.com/B-Con/crypto-algorithms) that TMake uses to tell whether or not a file has changed since the last execution.
+* The authors of [SQLite](http://sqlite.org/), a small, embeddable SQL database that TMake uses to store its cache.
+* Stuart Feldman, who originally invented UNIX `make`.
+* BSD `make` whose featureset formed the baseline for TMake ([OpenBSD's `make`](http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/make.1) in particular).
+* The authors of [OMake](http://projects.camlcity.org/projects/omake.html), which provided some inspiration for useful extensions to `make`.
+* Caroline Burgett and Shelly van Schalkwyk, for putting up with us while we were busy obsessing over code.
+* Gavin Massey and Dylan Giddings, who provided suggestions and encouragement.
+
+
 ## Terminology
 
 This reference manual makes use of the following terms:
@@ -19,8 +31,8 @@ This reference manual makes use of the following terms:
 * **TMakefile** - A Tcl script that defines rules and parameters necessary to construct a project.
 * **command** or **procedure** - A unit of execution that performs a small task when supplied with required information (arguments).
 * **variable** - A named storage location containing a value.
-* **rule variable** - While TMakefile authors are free to define new variables, several variables are always available within a recipe:  TARGET (the target of the rule), INPUTS (the list of dependencies), and OODATE (a list of only those dependencies which have been deemed out of date).  These variables are known as *rule variables*.
-* **explicit and implicit rules** - All rules defined by the `rule` command are *explicit*.  Rules automatically inferred for filename targets are *implicit*.  The only difference is in how TMake determines which rule to use to construct a given target. When looking for a rule to construct a target, TMake first looks for an explicit rule that matches the target. If an explicit rule is found, TMake stops the search and uses it to construct the target, or else TMake continues by looking for an implicit rule.  If an implicit rule is found (i.e., the name of an existing file in the search path), TMake stops the search and uses it to construct the target, or else TMake reports an error.  Any given target may have more than one rule associated with it (a target may have both an explicit rule *and* an implicit rule), but only the first rule found during the search will be used.
+* **rule variable** - While TMakefile authors are free to define new variables, several variables are always available within a recipe:  `TARGET` (the target of the rule), `INPUTS` (the list of dependencies), and `OODATE` (a list of only those dependencies which have been deemed out of date).  These variables are known as *rule variables*.
+* **explicit and implicit rules** - All rules defined by the `rule` command are *explicit*.  Rules automatically inferred for filename targets are *implicit*.  The only difference is in how TMake determines which rule to use to construct a given target. When looking for a rule to construct a target, TMake first looks for an explicit rule that matches the target. If an explicit rule is found, TMake stops the search and uses it to construct the target, or else TMake continues by looking for an implicit rule.  If an implicit rule is found (i.e., the name of an existing file in the search path), TMake stops the search and uses it to construct the target, or else TMake reports an error.  Any given target may have more than one rule associated with it (a target may have both an explicit rule *and* an implicit rule), but only the explicit rule found during the search will be used.
 
 
 ## Example
@@ -36,22 +48,33 @@ This reference manual makes use of the following terms:
 	}
 ------------------------------------------------------------------------------
 
-* The `param` command defines a parameter named `CC` which defaults to `gcc`, but can be overridden by the user on the command line or from the environment (if -e is specified).
+* The `param` command defines a parameter named `CC` which defaults to `gcc`, but can be overridden by the user on the command line or from the environment (if `-e` is specified).
 * The first rule defines a target named `all` which depends on the `foo` target.  The rule for `all` does not include a recipe. Since it is the first rule defined in the TMakefile, `all` is the default target, and therefore the goal, of this TMakefile.
 * The second rule defines a target named `foo.o` which depends on `foo.c`.  In this case, since there is no rule defined for `foo.c`, TMake assumes it is a filename.  This rule uses a recipe to compile `foo.c` into `foo.o`, using the `CC` parameter and the rule variables `TARGET` and `INPUTS`.
-* The third and final rule defines a target named `foo` which depends on `foo.o`. This rule uses a recipe to link foo.o into an executable named `foo`.
+* The third and final rule defines a target named `foo` which depends on `foo.o`. This rule uses a recipe to link `foo.o` into an executable named `foo`.
 * When TMake evaluates this TMakefile, it starts with the default goal and determines the prerequisite dependencies.  It also determines the order in which the rules must be applied in order to ensure that all dependencies have been satisfied.  Using the dependency information, it determines that the rules must be applied in this order:  `foo.o`, `foo`, `all`.
 
 
-## Command line options
+## Command line
 
+### Usage
+
+`tmake [options] [goal]`
+
+If `-f` is specified (see below), its argument is assumed to be the name of a TMakefile to be evaluated.  If `-f` is omitted, TMake looks for a file named `TMakefile` in the current directory.
+
+If `goal` is specified, it's assumed to be a target and is used as the goal for the evaluation of the TMakefile.  If `goal` is omitted, the first target defined in the file is used.
+
+### Options
+
+* *`PARAM`*`=`*`VALUE`*: Overwrite the value of parameter *`PARAM`* with *`VALUE`*.
 * `-n`: Display the commands that *would* be executed to construct a target without actually executing them.
 * `-f ` *`file`*: Evaluate *`file`* rather than the default *`TMakefile`*.
 * `-I ` *`dir`*: Specify an additional directory to be searched for include files.  May be specified more than once.
 * `-P ` *`dir`*: Specify an additional directory to be searched for package files.  May be specified more than once.
 * `-D ` *`param`*: Define a parameter *`param`* on the command line (i.e., set it to 1). May be specified more than once.
 * `-V ` *`var`*: Display TMake's idea of the value of a variable *`var`* without executing any rules.  May be specified more than once.
-* `-j` *`max_processes`*: Evaluate the TMakefile by spawning a number of processes equal to *`max_processes`* (a positive integer).  Defaults to 1.
+* `-j` *`max_processes`*: Evaluate the TMakefile by spawning a number of processes equal to *`max_processes`* (a positive integer).  Defaults to 1.  (**NOTE**: `-j` is planned but not yet implemented).
 * `-e`: Use environment variables to override parameters defined in the TMakefile.
 * `-u`: Construct the goal even if it is up to date.
 * `-s`: Silent mode:  do not display commands that are executed while processing the TMakefile.
@@ -59,13 +82,13 @@ This reference manual makes use of the following terms:
 
 ## Command Reference
 
-This section covers commands provided by TMake.  Note that all commands implemented by [Jim Tcl](http://jim.tcl.tk/) are also available in TMakefiles.  Jim Tcl commands are not covered here;  for a reference of Jim Tcl commands see [the Jim Tcl User Reference Manual](http://jim.tcl.tk/fossil/doc/trunk/Tcl_shipped.html).
+This section covers commands provided by TMake.  Note that TMakefiles are Jim Tcl scripts, and as such all commands implemented by [Jim Tcl](http://jim.tcl.tk/) are also available for use in TMakefiles.  Jim Tcl commands are not covered here;  for a reference of Jim Tcl commands see [the Jim Tcl User Reference Manual](http://jim.tcl.tk/fossil/doc/trunk/Tcl_shipped.html).
 
 ### rule
 
 **`rule `** *`target-list dependency-list ?recipe?`*
 
-Define an explicit rule for one or more targets.  The first rule defined in a TMakefile specifies the default target.  Multiple targets are handled independently from one another. That is, specifying multiple targets for a single rule is simply a shorthand for specifying two rules that have the same dependencies and recipe, but different targets.
+Define an explicit rule for one or more targets.  The first target of first rule defined in a TMakefile specifies the default goal.  Multiple targets are handled independently from one another. That is, specifying multiple targets for a single rule is simply a shorthand for specifying two rules that have the same dependencies and recipe, but different targets.
 
 The following rule variables are available in recipes:
 
@@ -73,7 +96,7 @@ The following rule variables are available in recipes:
 * `INPUTS`: The full list of target dependencies.
 * `OODATE`: The list of dependencies that have been deemed out of date by TMake.
 
-After a rule has been defined for a target, any subsequent rules defined for that same target will silently overwrite the previous rule (unless `-w` is specified on the command line, in which case a warning will be issued).
+After a rule has been defined for a target, any subsequent rules defined for that same target will silently overwrite the previous rule.
 
 Recipes are scoped the same way `proc` bodies are.  That means global variables need to be declared with the `global` command before they can be referenced, just as with `proc`.
 
@@ -81,22 +104,22 @@ Recipes are scoped the same way `proc` bodies are.  That means global variables 
 
 **`sub `** *`from-extension to-extension recipe`*
 
-Define a *substitution rule* for files matching *`from-extension`*.  A substitution rule is one defined by replacing the file extensions on a filename.  The **`sub`** command finds all files with extension *`from-extension`* and creates targets for files with the same name except that *`from-extension`* has been replaced with *`to-extension`*.  The **`sub`** command returns a list of all targets that were created.
+Define a *substitution rule* for files matching *`from-extension`*.  A substitution rule is one defined by replacing the file extensions on a filename.  The **`sub`** command finds all files in the current directory with extension *`from-extension`* and creates targets for files with the same name except that *`from-extension`* is replaced with *`to-extension`*.  The **`sub`** command returns a list of all targets that were created.
 
 #### Example
 
 To create a rule to compile all `*.c` files into `*.o` files in the current directory, the folllowing substitution rule can be used:
 
     set O_FILES [sub .c .o {
-                   global CC CFLAGS
-                   exec $CC $CFLAGS -o $TARGET -c $INPUTS
+                     global CC CFLAGS
+                     exec $CC $CFLAGS -o $TARGET -c $INPUTS
                  }]
 
 The resulting targets can then be used as the dependency for another rule that links all the `*.o` files into an executable:
 
     rule program {$O_FILES} {
-	  global CC CFLAGS
-	  exec $CC $CFLAGS -o $TARGET $INPUTS
+	    global CC CFLAGS
+	    exec $CC $CFLAGS -o $TARGET $INPUTS
 	}
 
 ### param
@@ -109,7 +132,7 @@ Define a parameter with a default value that may be overridden on the command li
 
 **`exec `** *`?-flags flags? arg ...`*
 
-Without any flags, `exec` first displays its arguments, then issues the arguments as a shell command.  If the command exits with a failure condition, TMake stops executing the TMakefile and reports an error.If `-n` is specified on the command line, the arguments are only displayed, not executed.
+Without any flags, `exec` first displays its arguments, then issues the arguments as a shell command.  If the command exits with a failure condition, TMake stops executing the TMakefile and reports an error. If `-n` is specified on the command line, the arguments are only displayed, not executed.  *`arg ...`* represents a command pipeline as accepted by the Tcl `exec` command.
 
 Flags alter the behavior of `exec`.  *`flags`* may be any combination of the following:
 
@@ -117,13 +140,13 @@ Flags alter the behavior of `exec`.  *`flags`* may be any combination of the fol
 * `-`: "Ignore errors".  Do not stop executing the TMakefile, even if the command exited with a failure condition.
 * `+`: "Always execute". Execute the command even if `-n` was specified on the command line.  This can be useful for debugging recursive TMakefiles.
 
-**Note**:  This is not the Tcl exec command.  In TMakefiles, the original Tcl exec command is available as `tcl::exec`.
+**NOTE**:  This is not the Tcl exec command.  In TMakefiles, the original Tcl exec command is available as `tcl::exec`.
 
 ### include
 
 **`include `** *`filename`*
 
-Evaluate a Tcl file named *`filename`*.  TMake uses the include search path to find the file.  It defaults to the current directory and the system-wide TMake include directory, but additional directories can be specified with `-I` on the command line.  The include search path is available in TMakefiles as a list stored in the variable `TM_INCLUDE_PATH`.
+Evaluate a Tcl file named *`filename`*.  TMake uses the include search path to find the file.  It defaults to the current directory and the system-wide TMake include directory (typically `/usr/lib/tmake/include` on Unix systems), but additional directories can be specified with `-I` on the command line.  The include search path is available in TMakefiles as a list stored in the variable `TM_INCLUDE_PATH`.
 
 ### make
 
@@ -170,6 +193,7 @@ Takes a list of filenames and returns a list of filenames where all filenames in
 ## Predefined global variables
 
 * `TM_CURRENT_GOAL` - The goal of this execution of the TMakefile if it has been determined already.
+* `TM_INCLUDE_PATH` - The current list of paths which the `include` command uses to search for include files.
 * `TM_PARAM` - An array of parameters that were overridden on the command line.
 * `TM_NO_EXECUTE` - Set to 1 if `-n` was specified on the command line.
 * `TM_SILENT_MODE` - Set to 1 if `-s` was specified on the command line.
