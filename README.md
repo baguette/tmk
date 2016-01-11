@@ -14,6 +14,7 @@ A portable `make` replacement with the full power of Tcl at your fingertips.
 |---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [Jim Tcl](http://jim.tcl.tk/index.html/doc/www/www/index.html)                        | Jim is an opensource small-footprint implementation of the Tcl programming language |
 | [SHA-1](https://github.com/B-Con/crypto-algorithms)                                   | Public Domain implementation by Brad Conte.                                         |
+| [SQLite](http://sqlite.org/)                                                          | An embeddable, single-file SQL database.                                            |
 
 
 ## Syntax highlighting
