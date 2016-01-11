@@ -3,7 +3,7 @@
 # TODO: Is this a bashism?
 set -e
 
-CC=${CC:-clang}
+CC=${CC:-gcc}
 CFLAGS=${CFLAGS:- -ansi -Wall -Wextra -g -O2}
 
 run() {
