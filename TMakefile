@@ -60,3 +60,23 @@ rule tmake {jim $C_SRC $H_SRC} {
 	   {*}$C_SRC jimtcl/libjim.a jimtcl/sqlite3/sqlite3.o -lm
 }
 
+
+
+# ----------------------------------------------------------------------------
+
+set DOCS {jimtcl/Tcl_shipped.html doc/refman.md}
+
+rule doc-html $DOCS {
+	file copy jimtcl/Tcl_shipped.html doc/Jim_Tcl.html
+	exec pandoc -f markdown_github -t html -o doc/refman.html doc/refman.md
+}
+
+rule doc-pdf $DOCS {
+	exec pandoc -f html -t latex -o doc/Jim_Tcl.pdf jimtcl/Tcl_shipped.html
+	exec pandoc -f mardown_github -t latex -o doc/refman.pdf doc/refman.md
+}
+
+rule doc-all {doc-html doc-pdf}
+
+#-----------------------------------------------------------------------------
+
