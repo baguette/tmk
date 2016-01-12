@@ -279,11 +279,11 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 				char *oodate = target_list_to_string(oodate_deps);
 				tm_rule_list *oodate_rules = find_rules(oodate_deps, tm_rules);
 
-				update_rules(db, interp, tmfile, oodate_rules, force);
-
 				if (was_updated(target)) {
 					goto done;
 				}
+
+				update_rules(db, interp, tmfile, oodate_rules, force);
 
 				printf("Making target %s:\n", rule->target);
 				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
@@ -302,12 +302,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 				free_target_list(oodate_deps);
 
 				rule->type = TM_UPDATED;
-			} else {
-				if (!was_updated(rule->target)) {
-					updated_targets = target_cons(rule->target, updated_targets);
-					printf("Target %s is up to date\n\n", rule->target);
-				}
-			}
+			} 
 		} else if (rule->type == TM_FILENAME) {
 			/* Check that the file actually exists */
 			if (!file_exists(rule->target)) {
@@ -512,6 +507,11 @@ int main(int argc, char **argv)
 	}
 
 	update_rules(db, interp, filename, sorted_rules, force_update);
+
+	if (!was_updated(goal)) {
+		printf("Target %s is up to date\n", goal);
+	}
+
 	free_rule_list(sorted_rules);
 	free_rule_list(tm_rules);
 
