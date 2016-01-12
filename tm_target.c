@@ -218,14 +218,15 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 
 	if (rule->mark == TM_UNMARKED) {
 		tm_rule_list *deps = NULL;
+		tm_rule_list *node = NULL;
 
 		rule->mark = TM_TEMPORARY;
 		deps = find_rules(rule->deps, rules);
 		
-		for (; deps; deps = deps->next) {
+		for (node = deps; node; node = node->next) {
 			int n;
 
-			n = topsort_visit(deps->rule, rules, sorted);
+			n = topsort_visit(node->rule, rules, sorted);
 
 			if (n < 0) {
 				free_rule_list(deps);
