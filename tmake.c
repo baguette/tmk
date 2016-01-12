@@ -281,22 +281,32 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 
 				update_rules(db, interp, tmfile, oodate_rules, force);
 
+				if (was_updated(target)) {
+					goto done;
+				}
+
 				printf("Making target %s:\n", rule->target);
 				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
 				cmd = malloc(len);
 				sprintf(cmd, fmt, target, target, inputs, oodate);
 				wrap(interp, Jim_Eval(interp, cmd));
+
+				update(db, tmfile, rule->target);
+				printf("\n");
+
+				done:
 				free(cmd);
 				free(oodate);
 				free(inputs);
 				free_rule_list(oodate_rules);
 				free_target_list(oodate_deps);
 
-				update(db, tmfile, rule->target);
 				rule->type = TM_UPDATED;
-				printf("\n");
 			} else {
-				printf("Target %s is up to date\n\n", rule->target);
+				if (!was_updated(rule->target)) {
+					updated_targets = target_cons(rule->target, updated_targets);
+					printf("Target %s is up to date\n\n", rule->target);
+				}
 			}
 		} else if (rule->type == TM_FILENAME) {
 			/* Check that the file actually exists */
