@@ -14,7 +14,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	tm_rule *rule = NULL;
 	target_list *deps = NULL;
 	Jim_Obj *target_subst, *deps_subst;
-	char *recipe = NULL;
+	const char *recipe = NULL;
 	int i, numtargs, numdeps;
 	const char *fmt = "proc recipe::%s {TARGET INPUTS OODATE} { \
 	%s\
@@ -29,19 +29,19 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return (JIM_ERR);
 	}
 
-	/* Perform variable substitution in the dependency lists */
-	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
-
 	/* If we've got a recipe, store it */
 	if (argc == 4) {
-		recipe = target_copy(Jim_String(argv[3]));
+		recipe = Jim_String(argv[3]);
 	}
+
+	/* Perform variable substitution in the dependency lists */
+	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
 
 	/* Get all the dependencies and store them in a dep list */
 	numdeps = Jim_ListLength(interp, deps_subst);
 	for (i = 0; i < numdeps; i++) {
 		Jim_Obj *dep = Jim_ListGetIndex(interp, deps_subst, i);
-		char *sdep = target_copy(Jim_String(dep));
+		const char *sdep = Jim_String(dep);
 
 		deps = target_cons(sdep, deps);
 	}
@@ -53,7 +53,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	numtargs = Jim_ListLength(interp, target_subst);
 	for (i = 0; i < numtargs; i++) {
 		Jim_Obj *target_obj = Jim_ListGetIndex(interp, target_subst, i);
-		char *target = target_copy(Jim_String(target_obj));
+		const char *target = Jim_String(target_obj);
 
 		/* check if there's already a rule for this target */
 		rule = find_rule(target, tm_rules);
@@ -61,20 +61,27 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			/* if so, overwrite it with the new rule */
 			free_target_list(rule->deps);
 			free(rule->recipe);
-			rule->target = target;
-			rule->recipe = recipe;
+			rule->deps = deps;
+			if (recipe) {
+				rule->recipe = malloc(strlen(recipe) + 1);
+				strcpy(rule->recipe, recipe);
+			} else {
+				rule->recipe = NULL;
+			}
 			rule->type = TM_EXPLICIT;
 		} else {
 			/* or else create a new rule */
 			rule = new_rule(target, deps, recipe);
 			tm_rules = rule_cons(rule, tm_rules);
+			free_rule(rule);
 		}
 
 		/* Do we need to set the default goal? */
 		if (tm_goal == NULL) {
 			const char *fmt_set = "set TM_CURRENT_GOAL %s";
 
-			tm_goal = target;
+			tm_goal = malloc(strlen(target) + 1);
+			strcpy(tm_goal, target);
 
 			len = strlen(fmt_set) + strlen(target) + 1;
 			cmd = malloc(len);
@@ -135,28 +142,27 @@ static int sha1sumCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int targetCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	char *target = NULL;
+	const char *target = NULL;
 
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "target name");
 		return (JIM_ERR);
 	}
 
-	target = target_copy(Jim_String(argv[1]));
+	target = Jim_String(argv[1]);
 
-	if (target_exists(target, get_targets(tm_rules))) {
+	if (find_rule(target, tm_rules)) {
 		Jim_SetResultInt(interp, 1);
 	} else {
 		Jim_SetResultInt(interp, 0);
 	}
 
-	free(target);
 	return (JIM_OK);
 }
 
 static int commandsCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-	char *target = NULL;
+	const char *target = NULL;
 	tm_rule *rule = NULL;
 
 	if (argc != 2) {
@@ -164,7 +170,7 @@ static int commandsCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		return (JIM_ERR);
 	}
 	
-	target = target_copy(Jim_String(argv[1]));
+	target = Jim_String(argv[1]);
 	rule = find_rule(target, tm_rules);
 
 	if (rule && rule->recipe) {
@@ -173,7 +179,6 @@ static int commandsCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		Jim_SetResultInt(interp, 0);
 	}
 
-	free(target);
 	return (JIM_OK);
 }
 

@@ -109,7 +109,7 @@ static int register_search_paths(Jim_Interp *interp, target_list *more_inc, targ
 
 static target_list *updated_targets = NULL;
 
-int update(sqlite3 *db, const char *tmfile, char *target)
+int update(sqlite3 *db, const char *tmfile, const char *target)
 {
 	unsigned char digest[CRYPTO_HASH_SIZE];
 	char newhash[CRYPTO_HASH_STRING_LENGTH];
@@ -159,13 +159,13 @@ int update(sqlite3 *db, const char *tmfile, char *target)
 }
 
 
-int was_updated(char *target)
+int was_updated(const char *target)
 {
 	return target_exists(target, updated_targets);
 }
 
 
-int needs_update(sqlite3 *db, const char *tmfile, char *target)
+int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 {
 	unsigned char digest[CRYPTO_HASH_SIZE];
 	const char *oldhash = NULL;
@@ -273,7 +273,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 				const char *fmt = "recipe::%s {%s} {%s} {%s}";
 				int len = 0;
 				char *cmd = NULL;
-				char *target = rule->target;
+				const char *target = rule->target;
 				char *inputs = target_list_to_string(rule->deps);
 				target_list *oodate_deps = need_update(db, tmfile, rule->deps);
 				char *oodate = target_list_to_string(oodate_deps);
@@ -291,6 +291,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 				free(inputs);
 				free_rule_list(oodate_rules);
 				free_target_list(oodate_deps);
+
 				update(db, tmfile, rule->target);
 				rule->type = TM_UPDATED;
 				printf("\n");
@@ -315,7 +316,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 int main(int argc, char **argv)
 {
 	const char *filename = DEFAULT_FILE;
-	char *goal = NULL;
+	const char *goal = NULL;
 	int silent = 0;
 	int force_update = 0;
 	int no_execute = 0;
@@ -392,6 +393,8 @@ int main(int argc, char **argv)
 	wrap(interp, Jim_tm_ext_cmdsInit(interp));
 
 	register_search_paths(interp, also_include, also_package);
+	free_target_list(also_include);
+	free_target_list(also_package);
 
 	/* Initialize commandline parameters */
 	for (; parameters; parameters = parameters->next) {
@@ -407,6 +410,7 @@ int main(int argc, char **argv)
 
 		free(cmd);
 	}
+	free_target_list(parameters);
 
 	for (; defines; defines = defines->next) {
 		const char *fmt = "set {%s} 1";
@@ -418,6 +422,7 @@ int main(int argc, char **argv)
 
 		free(cmd);
 	}
+	free_target_list(defines);
 
 	if (env_lookup) {
 		wrap(interp, Jim_Eval(interp, "set TM_ENV_LOOKUP 1"));
@@ -496,7 +501,7 @@ int main(int argc, char **argv)
 
 	update_rules(db, interp, filename, sorted_rules, force_update);
 	free_rule_list(sorted_rules);
-	deep_free_rule_list(tm_rules);
+	free_rule_list(tm_rules);
 
 	sqlrc = sqlite3_close(db);
 	if (sqlrc != SQLITE_OK) {

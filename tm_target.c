@@ -8,26 +8,65 @@
 char *tm_goal = NULL;
 tm_rule_list *tm_rules = NULL;
 
-tm_rule *new_rule(char *target, target_list *deps, char *recipe)
+tm_rule *new_rule(const char *target, target_list *deps, const char *recipe)
 {
 	tm_rule *rule = malloc(sizeof(tm_rule));
+	rule->target = malloc(strlen(target) + 1);
+	if (recipe)
+		rule->recipe = malloc(strlen(recipe) + 1);
 	
-	rule->target = target;
-	rule->deps = deps;
-	rule->recipe = recipe;
+	strcpy(rule->target, target);
+	rule->deps = target_list_copy(deps);
+	if (recipe)
+		strcpy(rule->recipe, recipe);
+	else
+		rule->recipe = NULL;
 	rule->type = TM_EXPLICIT;
 	rule->mark = TM_UNMARKED;
 
 	return rule;
 }
 
-tm_rule *new_filename(char *target)
+tm_rule *new_filename(const char *target)
 {
 	tm_rule *rule = new_rule(target, NULL, NULL);
 
 	rule->type = TM_FILENAME;
 
 	return rule;
+}
+
+tm_rule *rule_copy(tm_rule *rule)
+{
+	tm_rule *copy;
+
+	if (!rule) {
+		return NULL;
+	}
+
+	copy = malloc(sizeof(tm_rule));
+
+	if (rule->target) {
+		copy->target = malloc(strlen(rule->target) + 1);
+		strcpy(copy->target, rule->target);
+	} else {
+		copy->target = NULL;
+	}
+	if (rule->deps) {
+		copy->deps = target_list_copy(rule->deps);
+	} else {
+		copy->deps = NULL;
+	}
+	if (rule->recipe) {
+		copy->recipe = malloc(strlen(rule->recipe) + 1);
+		strcpy(copy->recipe, rule->recipe);
+	} else {
+		copy->recipe = NULL;
+	}
+	copy->type = rule->type;
+	copy->mark = rule->mark;
+
+	return copy;
 }
 
 void free_rule(tm_rule *rule)
@@ -38,66 +77,59 @@ void free_rule(tm_rule *rule)
 	free(rule);
 }
 
-target_list *target_cons(char *name, target_list *next)
+target_list *target_cons(const char *name, target_list *next)
 {
 	target_list *targets = malloc(sizeof(target_list));
 
-	targets->name = name;
+	targets->name = malloc(strlen(name) + 1);
+
+	strcpy(targets->name, name);
 	targets->next = next;
 
 	return targets;
 }
 
-void deep_free_target_list(target_list *targets)
-{
-	if (targets == NULL)
-		return;
-
-	free(targets->name);
-	free_target_list(targets->next);
-	free(targets);
-}
-
 void free_target_list(target_list *targets)
 {
-	if (targets == NULL)
-		return;
-	
-	free_target_list(targets->next);
-	free(targets);
+	while (targets) {
+		target_list *node = targets->next;
+		free(targets->name);
+		free(targets);
+		targets = node;
+	}
+}
+
+target_list *target_list_copy(target_list *targets)
+{
+	target_list *rev = target_list_reverse(targets);
+	target_list *copy = target_list_reverse(rev);
+
+	free_target_list(rev);
+	return copy;
 }
 
 tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next)
 {
 	tm_rule_list *rules = malloc(sizeof(tm_rule_list));
 
-	rules->rule = rule;
+	rules->rule = rule_copy(rule);
 	rules->next = next;
 	
 	return rules;
 }
 
-void deep_free_rule_list(tm_rule_list *rules)
-{
-	if (rules == NULL)
-		return;
-	
-	free_rule(rules->rule);
-	free_rule_list(rules->next);
-	free(rules);
-}
-
 void free_rule_list(tm_rule_list *rules)
 {
-	if (rules == NULL)
-		return;
-	
-	free_rule_list(rules->next);
-	free(rules);
+	while (rules) {
+		tm_rule_list *node = rules->next;
+		free_rule(rules->rule);
+		free(rules);
+		rules = node;
+	}
 }
 
 
-int target_exists(char *target, target_list *targets)
+int target_exists(const char *target, target_list *targets)
 {
 	for (; targets; targets = targets->next) {
 		if (strcmp(targets->name, target) == 0) {
@@ -109,7 +141,7 @@ int target_exists(char *target, target_list *targets)
 }
 
 
-tm_rule *find_rule(char *target, tm_rule_list *rules)
+tm_rule *find_rule(const char *target, tm_rule_list *rules)
 {
 	tm_rule_list *node = rules;
 	tm_rule *rule = NULL;
@@ -126,7 +158,7 @@ tm_rule *find_rule(char *target, tm_rule_list *rules)
 	return rule;
 }
 
-tm_rule *find_rule_or_file(char *target, tm_rule_list *rules)
+tm_rule *find_rule_or_file(const char *target, tm_rule_list *rules)
 {
 	tm_rule *rule = find_rule(target, rules);
 	
@@ -150,39 +182,6 @@ tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 	return mapped;
 }
 
-
-/* Tarjan's algorithm */
-static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sorted)
-{
-	if (rule->mark == TM_TEMPORARY) {
-		fprintf(stderr, "ERROR:  Cycle detected in dependency graph\n");
-		return -1;
-	}
-
-	if (rule->mark == TM_UNMARKED) {
-		tm_rule_list *deps = NULL;
-
-		rule->mark = TM_TEMPORARY;
-		deps = find_rules(rule->deps, rules);
-		
-		for (; deps; deps = deps->next) {
-			int n;
-
-			n = topsort_visit(deps->rule, rules, sorted);
-
-			if (n < 0) {
-				free_rule_list(deps);
-				return n;
-			}
-		}
-
-		rule->mark = TM_PERMANENT;
-		*sorted = rule_cons(rule, *sorted);
-		free_rule_list(deps);
-	}
-
-	return 0;
-}
 
 tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 {
@@ -208,7 +207,41 @@ target_list *target_list_reverse(target_list *targets)
 	return rev;
 }
 
-tm_rule_list *topsort(char *target, tm_rule_list *rules)
+
+/* Tarjan's algorithm for topological sorting */
+static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sorted)
+{
+	if (rule->mark == TM_TEMPORARY) {
+		fprintf(stderr, "ERROR:  Cycle detected in dependency graph\n");
+		return -1;
+	}
+
+	if (rule->mark == TM_UNMARKED) {
+		tm_rule_list *deps = NULL;
+
+		rule->mark = TM_TEMPORARY;
+		deps = find_rules(rule->deps, rules);
+		
+		for (; deps; deps = deps->next) {
+			int n;
+
+			n = topsort_visit(deps->rule, rules, sorted);
+
+			if (n < 0) {
+				free_rule_list(deps);
+				return n;
+			}
+		}
+		free_rule_list(deps);
+
+		rule->mark = TM_PERMANENT;
+		*sorted = rule_cons(rule, *sorted);
+	}
+
+	return 0;
+}
+
+tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 {
 	tm_rule_list *sorted = NULL;
 	tm_rule_list *rev = NULL;
@@ -224,32 +257,11 @@ tm_rule_list *topsort(char *target, tm_rule_list *rules)
 	return rev;
 }
 
-char *target_copy(const char *target)
-{
-	int len = strlen(target);
-	char *ret = malloc(len + 1);
-
-	strcpy(ret, target);
-
-	return ret;
-}
-
-target_list *get_targets(tm_rule_list *rules)
-{
-	target_list *targets = NULL;
-	tm_rule_list *node = NULL;
-
-	for (node = rules; node; node = node->next) {
-		targets = target_cons(node->rule->target, targets);
-	}
-
-	return targets;
-}
 
 char *target_list_to_string(target_list *targets)
 {
 	target_list *node = targets;
-	int len = 0;
+	int len = 1;    /* for NUL terminator */
 	char *str = NULL;
 	char *p = NULL;
 
