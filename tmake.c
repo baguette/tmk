@@ -508,7 +508,7 @@ int main(int argc, char **argv)
 
 	update_rules(db, interp, filename, sorted_rules, force_update);
 
-	if (!was_updated(goal)) {
+	if (!updated_targets) {
 		printf("Target %s is up to date\n", goal);
 	}
 
