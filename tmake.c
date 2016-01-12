@@ -334,6 +334,8 @@ int main(int argc, char **argv)
 	int sqlrc = 0;
 	char *sqlerr = NULL;
 
+	target_list *node = NULL;
+
 	int i;
 
 	for (i = 1; i < argc; i++) {
@@ -397,8 +399,8 @@ int main(int argc, char **argv)
 	free_target_list(also_package);
 
 	/* Initialize commandline parameters */
-	for (; parameters; parameters = parameters->next) {
-		char *var = strtok(parameters->name, "=");
+	for (node = parameters; node; node = node->next) {
+		char *var = strtok(node->name, "=");
 		char *val = strtok(NULL, "\0");
 
 		const char *fmt = "set {TM_PARAM(%s)} {%s}";
@@ -412,12 +414,12 @@ int main(int argc, char **argv)
 	}
 	free_target_list(parameters);
 
-	for (; defines; defines = defines->next) {
+	for (node = defines; node; node = node->next) {
 		const char *fmt = "set {%s} 1";
-		int len = strlen(defines->name) + strlen(fmt) + 1;
+		int len = strlen(node->name) + strlen(fmt) + 1;
 		char *cmd = malloc(len);
 
-		sprintf(cmd, fmt, defines->name);
+		sprintf(cmd, fmt, node->name);
 		wrap(interp, Jim_Eval(interp, cmd));
 
 		free(cmd);
