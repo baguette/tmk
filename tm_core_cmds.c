@@ -74,6 +74,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			rule = new_rule(target, deps, recipe);
 			tm_rules = rule_cons(rule, tm_rules);
 			free_rule(rule);
+			free_target_list(deps);
 		}
 
 		/* Do we need to set the default goal? */

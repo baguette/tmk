@@ -102,6 +102,8 @@ void tm_CryptoHashFile(const char* file, unsigned char digest[CRYPTO_HASH_SIZE])
         sha1_update(&sha_ctx, buff, bytesRead);
     }
 
+    fclose(fp);
+
     /* Finalize SHA1 Context */
     sha1_final(&sha_ctx, digest);
 }
