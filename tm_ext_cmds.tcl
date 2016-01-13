@@ -114,7 +114,12 @@ proc exec args {
 	set rest [lrange $args $start end]
 	
 	if {$echo && ![defined TM_SILENT_MODE]} {
-		puts "$rest"
+		# Do it this way to avoid having Tcl escape quotes and such
+		# in the output.
+		foreach arg [lrange $rest 0 end-1] {
+			puts -nonewline "$arg "
+		}
+		puts "[lrange $rest end end]"
 		flush stdout
 	}
 
