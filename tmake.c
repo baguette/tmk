@@ -16,13 +16,13 @@
 
 const char *DEFAULT_INC_PATH[] = {
 	".",
-	"/usr/lib/tmake/include",
+	TM_PREFIX "/lib/tmake/include",
 	NULL
 };
 
 const char *DEFAULT_PKG_PATH[] = {
 	".",
-	"/usr/lib/tmake/packages",
+	TM_PREFIX "/lib/tmake/packages",
 	NULL
 };
 

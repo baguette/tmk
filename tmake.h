@@ -1,6 +1,10 @@
 #ifndef TMAKE_H
 #define TMAKE_H
 
+#ifndef TM_PREFIX
+	#define TM_PREFIX "/usr/local"
+#endif
+
 #define TM_CACHE ".tmcache"
 #define DEFAULT_FILE "TMakefile"
 
