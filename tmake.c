@@ -119,7 +119,7 @@ int update(sqlite3 *db, const char *tmfile, const char *target)
 	const char *stmtail;
 	int sqlrc;
 
-	rule = find_rule_or_file(target, tm_rules);
+	rule = find_rule(target, tm_rules);
 
 	if (!rule) {
 		return (JIM_ERR);
@@ -181,7 +181,7 @@ int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 	sqlite3_stmt *stm = NULL;
 	int sqlrc;
 
-	rule = find_rule_or_file(target, tm_rules);
+	rule = find_rule(target, tm_rules);
 
 	if (!rule) {
 		goto yes;
@@ -199,7 +199,7 @@ int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 		                "         Assuming %s needs update.\n", target);
 		return 1;
 	}
-
+	
 	sqlite3_bind_text(stm, 1, tmfile, -1, SQLITE_TRANSIENT);
 	sqlite3_bind_text(stm, 2, target, -1, SQLITE_TRANSIENT);
 	sqlrc = sqlite3_step(stm);
@@ -270,7 +270,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp, const char *tmfile, tm_rule_l
 		/* nothing to do */
 		return;
 	}
-
+	
 	for (; sorted_rules; sorted_rules = sorted_rules->next) {
 		tm_rule *rule = sorted_rules->rule;
 		if (rule->type == TM_EXPLICIT) {
@@ -477,15 +477,9 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-/*
-	printf("tm_rules = ");
-	print_rule_list(tm_rules);
-*/
+	find_files(&tm_rules);
+
 	sorted_rules = topsort(goal, tm_rules);
-/*
-	printf("sorted_rules = ");
-	print_rule_list(sorted_rules);
-*/
 
 	if (!sorted_rules) {
 		fprintf(stderr, "ERROR: Could not find rule to make %s\n", goal);

@@ -42,8 +42,8 @@ target_list *target_list_copy(target_list *targets);
 
 int target_exists(const char *target, target_list *targets);
 tm_rule *find_rule(const char *name, tm_rule_list *rules);
-tm_rule *find_rule_or_file(const char *target, tm_rule_list *rules);
 tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules);
+void find_files(tm_rule_list **rules);
 
 tm_rule_list *topsort(const char *target, tm_rule_list *rules);
 

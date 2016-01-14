@@ -122,7 +122,8 @@ void free_rule_list(tm_rule_list *rules)
 {
 	while (rules) {
 		tm_rule_list *node = rules->next;
-		free_rule(rules->rule);
+		if (rules->rule)
+			free_rule(rules->rule);
 		free(rules);
 		rules = node;
 	}
@@ -158,15 +159,26 @@ tm_rule *find_rule(const char *target, tm_rule_list *rules)
 	return rule;
 }
 
-tm_rule *find_rule_or_file(const char *target, tm_rule_list *rules)
+void find_files_from_deps(target_list *targets, tm_rule_list **rules)
 {
-	tm_rule *rule = find_rule(target, rules);
-	
-	if (!rule) {
-		rule = new_filename(target);
-	}
+	for (; targets; targets = targets->next) {
+		tm_rule *rule = find_rule(targets->name, *rules);
 
-	return rule;
+		if (!rule) {
+			rule = new_filename(targets->name);
+			*rules = rule_cons(rule, *rules);
+			free_rule(rule);
+		}
+	}
+}
+
+void find_files(tm_rule_list **rules)
+{
+	tm_rule_list *node;
+
+	for (node = *rules; node; node = node->next) {
+		find_files_from_deps(node->rule->deps, rules);
+	}
 }
 
 tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
@@ -175,13 +187,14 @@ tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 	target_list *node = targets;
 
 	while (node) {
-		mapped = rule_cons(find_rule_or_file(node->name, rules), mapped);
+		tm_rule *rule = find_rule(node->name, rules);
+		if (rule)
+			mapped = rule_cons(rule, mapped);
 		node = node->next;
 	}
 
 	return mapped;
 }
-
 
 tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 {
@@ -224,9 +237,10 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 		deps = find_rules(rule->deps, rules);
 		
 		for (node = deps; node; node = node->next) {
-			int n;
+			int n = 0;
 
-			n = topsort_visit(node->rule, rules, sorted);
+			if (node->rule)
+				n = topsort_visit(node->rule, rules, sorted);
 
 			if (n < 0) {
 				free_rule_list(deps);
@@ -246,12 +260,14 @@ tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 {
 	tm_rule_list *sorted = NULL;
 	tm_rule_list *rev = NULL;
-	tm_rule *rule = find_rule_or_file(target, rules);
+	tm_rule *rule = find_rule(target, rules);
 
 	if (rule == NULL)
 		return NULL;
 	
-	topsort_visit(rule, rules, &sorted);
+	if (topsort_visit(rule, rules, &sorted) < 0) {
+		return NULL;
+	}
 
 	rev = rule_list_reverse(sorted);
 	free_rule_list(sorted);
