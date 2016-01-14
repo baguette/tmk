@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include <sqlite3.h>
 
@@ -393,7 +392,10 @@ int main(int argc, char **argv)
 
 	/* Create a Tcl interpreter */
 	interp = Jim_CreateInterp();
-	assert(interp != NULL && "couldn't create interpreter");
+	if (interp == NULL) {
+		fprintf(stderr, "ERROR: Unable to create Tcl interpreter\n");
+		return (EXIT_FAILURE);
+	}
 
 	/* Register the core Tcl commands */
 	Jim_RegisterCoreCommands(interp);

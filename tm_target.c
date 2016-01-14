@@ -172,6 +172,10 @@ void find_files_from_deps(target_list *targets, tm_rule_list **rules)
 	}
 }
 
+/* Scour through all the dependencies in a rule list and allocate new
+ * filename rules for things deemed to be files.
+ * Updates the rule list with the new rules.
+ */
 void find_files(tm_rule_list **rules)
 {
 	tm_rule_list *node;
