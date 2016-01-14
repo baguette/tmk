@@ -6,11 +6,79 @@
 .Nd maintain program dependencies with Tcl
 .Sh SYNOPSIS
 .Nm tmake
+.Op Fl D Ar variable
+.Op Fl e
 .Op Fl f Pa file
-.Op Fl options
+.Op Fl I Ar directory
+.Op Fl j Ar max_processes
+.Op Fl n
+.Op Fl P Ar directory
+.Op Fl s
+.Op Fl u
+.Op Fl V Ar variable
+.Op Ar PARAM=VALUE
 .Op Ar target
 .Sh DESCRIPTION
 .Nm
 is a program to process a
 .Em TMakefile
 -- a build automation script written in Tcl.
+.Pp
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl D Ar variable
+Define
+.Ar variable
+prior to evaluating the TMakefile (that is, set it to 1).
+.It Fl e
+Add the environment to the search path for parameters.
+.It Fl f Ar file
+Evaluate
+.Ar file
+instead of the default
+.Ar TMakefile
+.It Fl I Ar directory
+Add
+.Ar directory
+to the search path for files included with the
+.Ar include
+command.
+.It Fl j Ar max_processes
+Use up to 
+.Ar max_processes
+processes to evaluate the TMakefile.
+.It Fl n
+Display the commands that would be evaluated by tmake without actually executing them.
+.It Fl P Ar directory
+Add
+.Ar directory
+to the package search path used by the
+.Ar package require
+command.
+.It Fl s
+Silent mode: do not display any commands prior to executing them.
+.It Fl u
+Force update: update all targets needed by the goal target, regardless of whether
+they're out of date or not.
+.It Fl V Ar variable
+Display tmake's idea of the value of
+.Ar variable
+without executing any rules.
+.It Ar PARAM=VALUE
+Set the parameter
+.Ar PARAM
+to
+.Ar VALUE
+overriding any defaults specified in the TMakefile.
+.El
+.Sh HISTORY
+.Sy tmake
+was first developed in early 2016 by Cory Burgett and Andre van Schalkwyk,
+inspired by the classic
+.Sy make
+utility included with UNIX variants, whose history goes way back.
+.Sh SEE ALSO
+.Bl -hang -compact -width DS
+.It The TMake Reference Manual (refman)
+.It Xr make 1
+.El
