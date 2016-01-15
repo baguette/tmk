@@ -1,5 +1,5 @@
 param CC = gcc
-param CFLAGS = "-g -O2 -ansi -Wall"
+param CFLAGS = "-g -O2 -ansi -Wall -Wextra"
 
 param MAKE_C_EXT = "jimtcl/jimsh jimtcl/make-c-ext.tcl"
 

@@ -49,8 +49,15 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	/* Perform variable substitution in the target list */
 	Jim_SubstObj(interp, argv[1], &target_subst, 0);
 
-	/* For each target in the list, create a rule and a proc */
 	numtargs = Jim_ListLength(interp, target_subst);
+
+	if (numtargs == 0) {
+		fprintf(stderr, "ERROR: no targets specified for rule\n");
+		free(deps);
+		return (JIM_ERR);
+	}
+
+	/* For each target in the list, create a rule and a proc */
 	for (i = 0; i < numtargs; i++) {
 		Jim_Obj *target_obj = Jim_ListGetIndex(interp, target_subst, i);
 		const char *target = Jim_String(target_obj);
@@ -61,7 +68,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			/* if so, overwrite it with the new rule */
 			free_target_list(rule->deps);
 			free(rule->recipe);
-			rule->deps = deps;
+			rule->deps = target_list_copy(deps);
 			if (recipe) {
 				rule->recipe = malloc(strlen(recipe) + 1);
 				strcpy(rule->recipe, recipe);
@@ -74,7 +81,6 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			rule = new_rule(target, deps, recipe);
 			tm_rules = rule_cons(rule, tm_rules);
 			free_rule(rule);
-			free_target_list(deps);
 		}
 
 		/* Do we need to set the default goal? */
@@ -90,7 +96,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 			ret = Jim_Eval(interp, cmd);
 			free(cmd);
 			if (ret != (JIM_OK)) {
-				return ret;
+				goto error;
 			}
 		}
 
@@ -101,11 +107,16 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		ret = Jim_Eval(interp, cmd);
 		free(cmd);
 		if (ret != (JIM_OK)) {
-			return ret;
+			goto error;
 		}
 	}
 
+	free_target_list(deps);
 	return (JIM_OK);
+
+	error:
+	free_target_list(deps);
+	return ret;
 }
 
 /* Provide tm_crypto functionality to Jim Tcl */
