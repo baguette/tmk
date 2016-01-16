@@ -113,6 +113,7 @@ int main(int argc, char **argv)
 	target_list *also_package = NULL;
 	target_list *parameters = NULL;
 	target_list *defines = NULL;
+	target_list *display_vars = NULL;
 
 	int retval = EXIT_SUCCESS;
 	tm_rule_list *sorted_rules = NULL;
@@ -152,6 +153,9 @@ int main(int argc, char **argv)
 					break;
 				case 'D':
 					defines = target_cons(get(&i, argc, argv), defines);
+					break;
+				case 'V':
+					display_vars = target_cons(get(&i, argc, argv), display_vars);
 					break;
 				default:
 					usage(argv[0]);
@@ -246,6 +250,24 @@ int main(int argc, char **argv)
 	} else {
 		fprintf(stderr, "ERROR: Could not open %s for reading\n", filename);
 		retval = EXIT_FAILURE;
+	}
+
+	if (display_vars) {
+		target_list *node;
+		for (node = display_vars; node; node = node->next) {
+			Jim_Obj *val = Jim_GetGlobalVariableStr(interp, node->name, JIM_NONE);
+
+			if (val) {
+				const char *sval = Jim_String(val);
+				printf("%s = %s\n", node->name, sval);
+			} else {
+				printf("%s is not defined\n", node->name);
+			}
+		}
+		free_target_list(display_vars);
+		free_rule_list(tm_rules);
+		Jim_FreeInterp(interp);
+		exit(EXIT_SUCCESS);
 	}
 
 	goal = goal ? goal : tm_goal;
