@@ -31,7 +31,7 @@ static void usage(const char *progname)
 	printf("usage: %s [options] [target]\n", progname);
 	printf("\n");
 	printf("options:\n");
-	printf(" -f <TMakefile>    Process <TMakefile>\n");
+	printf(" -f <TMakefile>    Process <TMakefile> instead of the default.\n");
 	printf(" -n                Display commands that would be executed without\n"
 	       "                   actually executing any commands.\n");
 	printf(" -I <path>         Add <path> to the list of directories to search\n"
@@ -131,7 +131,11 @@ int main(int argc, char **argv)
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
 				case 'f':
-					filename = get(&i, argc, argv);
+					if (strcmp(filename, DEFAULT_FILE) == 0) {
+						filename = get(&i, argc, argv);
+					} else {
+						usage(argv[0]);
+					}
 					break;
 				case 's':
 					silent = 1;
