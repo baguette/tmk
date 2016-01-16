@@ -192,7 +192,6 @@ Takes a list of filenames and returns a list of filenames where all filenames in
 
 ## Predefined global variables
 
-* `TM_CURRENT_GOAL` - The goal of this execution of the TMakefile if it has been determined already.
 * `TM_INCLUDE_PATH` - The current list of paths which the `include` command uses to search for include files.
 * `TM_PARAM` - An array of parameters that were overridden on the command line.
 * `TM_NO_EXECUTE` - Set to 1 if `-n` was specified on the command line.
