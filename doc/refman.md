@@ -77,7 +77,7 @@ If `goal` is specified, it's assumed to be a target and is used as the goal for 
 * `-j` *`max_processes`*: Evaluate the TMakefile by spawning a number of processes equal to *`max_processes`* (a positive integer).  Defaults to 1.  (**NOTE**: `-j` is planned but not yet implemented).
 * `-e`: Use environment variables to override parameters defined in the TMakefile.
 * `-u`: Construct the goal even if it is up to date.
-* `-s`: Silent mode:  do not display commands that are executed while processing the TMakefile.
+* `-s`: Silent mode:  Do not display information on stdout.  Errors will still be displayed.
 
 
 ## Command Reference
