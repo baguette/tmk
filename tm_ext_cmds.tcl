@@ -119,16 +119,28 @@ proc exec args {
 		return ""
 	}
 
-	set childpid [tcl::exec {*}$rest &]
-	set status [os.wait $childpid]    ;# TODO: This might not work on Windows...
+	if {![defined TM_SILENT_MODE]} {
+		set childpid [tcl::exec {*}$rest &]
+		set status [os.wait $childpid]    ;# TODO: This might not work on Windows...
 
-	if {"[lindex $status 1]" eq "exit" && [lindex $status 2] != 0} {
-		if {$errexit} {
-			error "exec returned non-zero return code: $status"
+		if {"[lindex $status 1]" eq "exit" && [lindex $status 2] != 0} {
+			if {$errexit} {
+				error "exec returned non-zero return code: $status"
+			}
+		} elseif {"[lindex $status 1]" ne "exit"} {
+			if {$errexit} {
+				error "exec terminated abnormally: $status"
+			}
 		}
-	} elseif {"[lindex $status 1]" ne "exit"} {
-		if {$errexit} {
-			error "exec terminated abnormally: $status"
+	} else {
+		try {
+			tcl::exec {*}$rest
+		} on CHILDSTATUS {pid code} {
+			error "exec returned non-zero return code: $code"
+		} on CHILDKILLED {pid sig msg} {
+			error "exec terminated abnormally: $msg"
+		} on CHILDSUSP   {pid sig msg} {
+			error "exec suspended: $msg"
 		}
 	}
 

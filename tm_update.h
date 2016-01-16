@@ -24,6 +24,7 @@ void update_rules(sqlite3 *db,
                   Jim_Interp *interp,
                   const char *tmfile,
                   tm_rule_list *sorted_rules,
-                  int force);
+                  int force,
+                  int silence);
 
 #endif

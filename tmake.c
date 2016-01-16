@@ -309,9 +309,9 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	update_rules(db, interp, filename, sorted_rules, force_update);
+	update_rules(db, interp, filename, sorted_rules, force_update, silent);
 
-	if (!updated_targets) {
+	if (!updated_targets && !silent) {
 		printf("Target %s is up to date\n", goal);
 	}
 

@@ -188,7 +188,8 @@ void update_rules(sqlite3 *db,
                   Jim_Interp *interp,
                   const char *tmfile,
                   tm_rule_list *sorted_rules,
-                  int force)
+                  int force,
+                  int silence)
 {
 	if (!sorted_rules) {
 		/* nothing to do */
@@ -215,16 +216,18 @@ void update_rules(sqlite3 *db,
 					goto done;
 				}
 
-				update_rules(db, interp, tmfile, oodate_rules, force);
+				update_rules(db, interp, tmfile, oodate_rules, force, silence);
 
-				printf("Making target %s:\n", rule->target);
+				if (!silence)
+					printf("Making target %s:\n", rule->target);
 				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
 				cmd = malloc(len);
 				sprintf(cmd, fmt, target, target, inputs, oodate);
 				wrap(interp, Jim_Eval(interp, cmd));
 
 				update(db, tmfile, rule->target);
-				printf("\n");
+				if (!silence)
+					printf("\n");
 
 				done:
 				free(cmd);
