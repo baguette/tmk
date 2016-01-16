@@ -265,6 +265,7 @@ int main(int argc, char **argv)
 			}
 		}
 		free_target_list(display_vars);
+		if (tm_goal) free(tm_goal);
 		free_rule_list(tm_rules);
 		Jim_FreeInterp(interp);
 		exit(EXIT_SUCCESS);
@@ -316,6 +317,7 @@ int main(int argc, char **argv)
 
 	free_rule_list(sorted_rules);
 	free_rule_list(tm_rules);
+	if (tm_goal) free(tm_goal);
 
 	sqlrc = sqlite3_close(db);
 	if (sqlrc != SQLITE_OK) {
