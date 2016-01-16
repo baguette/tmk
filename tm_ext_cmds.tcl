@@ -40,21 +40,17 @@ proc array_has {a key} {
 }
 
 # Set a global parameter var to val using mode mode
-proc param {var mode val} {
+proc param {var val} {
 	global TM_PARAM
 	global TM_ENV_LOOKUP
 	global env
 
-	if {$mode eq "="} {
-		if {[array_has TM_PARAM $var]} {
-			uplevel "set $var {$TM_PARAM($var)}"
-		} elseif {[info exists TM_ENV_LOOKUP]} {
-			uplevel "set $var {$env($var)}"
-		} else {
-			uplevel "set $var {$val}"
-		}
+	if {[array_has TM_PARAM $var]} {
+		uplevel "set $var {$TM_PARAM($var)}"
+	} elseif {[info exists TM_ENV_LOOKUP]} {
+		uplevel "set $var {$env($var)}"
 	} else {
-		error "Unknown mode in parameter assignment: $mode"
+		uplevel "set $var {$val}"
 	}
 }
 
