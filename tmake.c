@@ -254,17 +254,21 @@ int main(int argc, char **argv)
 
 	if (display_vars) {
 		target_list *node;
-		for (node = display_vars; node; node = node->next) {
+		target_list *rev = target_list_reverse(display_vars);
+		free_target_list(display_vars);
+
+		for (node = rev; node; node = node->next) {
 			Jim_Obj *val = Jim_GetGlobalVariableStr(interp, node->name, JIM_NONE);
 
 			if (val) {
 				const char *sval = Jim_String(val);
-				printf("%s = %s\n", node->name, sval);
+				printf("%s=%s\n", node->name, sval);
 			} else {
 				printf("%s is not defined\n", node->name);
 			}
 		}
-		free_target_list(display_vars);
+
+		free_target_list(rev);
 		if (tm_goal) free(tm_goal);
 		free_rule_list(tm_rules);
 		Jim_FreeInterp(interp);
