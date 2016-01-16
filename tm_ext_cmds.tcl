@@ -3,8 +3,7 @@ set TM_PLATFORM "$TM_OPSYS-$TM_MACHINE_ARCH"
 
 # Check if a variable var is defined
 proc defined {var} {
-	global $var
-	if {[info exists $var]} {
+	if {[uplevel "info exists $var"]} {
 		return 1
 	} else {
 		return 0
@@ -33,9 +32,7 @@ proc empty {operand} {
 
 # Check if an array a contains a value for key
 proc array_has {a key} {
-	global $a
-
-	if {[string length [array get $a $key]]} {
+	if {[string length [uplevel "array get $a $key"]]} {
 		return 1
 	} else {
 		return 0
@@ -47,15 +44,14 @@ proc param {var mode val} {
 	global TM_PARAM
 	global TM_ENV_LOOKUP
 	global env
-	global $var
-	
-	if {$mode == "="} {
+
+	if {$mode eq "="} {
 		if {[array_has TM_PARAM $var]} {
-			set $var $TM_PARAM($var)
+			uplevel "set $var {$TM_PARAM($var)}"
 		} elseif {[info exists TM_ENV_LOOKUP]} {
-			set $var $env($var)
+			uplevel "set $var {$env($var)}"
 		} else {
-			set $var $val
+			uplevel "set $var {$val}"
 		}
 	} else {
 		error "Unknown mode in parameter assignment: $mode"
