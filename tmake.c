@@ -61,10 +61,16 @@ void usage(const char *progname)
 	exit(1);
 }
 
-char *get(int arg, int argc, char **argv)
+char *get(int *arg, int argc, char **argv)
 {
-	if (arg < argc)
-		return argv[arg];
+	if (strlen(argv[*arg]) > 2) {
+		return &(argv[*arg][2]);
+	}
+
+	if ((*arg + 1) < argc) {
+		*arg = *arg + 1;
+		return argv[*arg];
+	}
 
 	usage(argv[0]);
 	return NULL;
@@ -354,7 +360,7 @@ int main(int argc, char **argv)
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
 				case 'f':
-					filename = get(++i, argc, argv);
+					filename = get(&i, argc, argv);
 					break;
 				case 's':
 					silent = 1;
@@ -369,13 +375,13 @@ int main(int argc, char **argv)
 					env_lookup = 1;
 					break;
 				case 'I':
-					also_include = target_cons(get(++i, argc, argv), also_include);
+					also_include = target_cons(get(&i, argc, argv), also_include);
 					break;
 				case 'P':
-					also_package = target_cons(get(++i, argc, argv), also_package);
+					also_package = target_cons(get(&i, argc, argv), also_package);
 					break;
 				case 'D':
-					defines = target_cons(get(++i, argc, argv), defines);
+					defines = target_cons(get(&i, argc, argv), defines);
 					break;
 				default:
 					usage(argv[0]);
