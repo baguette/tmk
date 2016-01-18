@@ -5,9 +5,16 @@
 #include "tm_target.h"
 #include "tm_core_cmds.h"
 
+/* The goal target of the current execution */
 char *tm_goal = NULL;
+
+/* All the rules defined by the TMakefile */
 tm_rule_list *tm_rules = NULL;
 
+
+/* Create a new explicit rule.
+ * Makes copies of all the arguments to store in the rule.
+ */
 tm_rule *new_rule(const char *target, target_list *deps, const char *recipe)
 {
 	tm_rule *rule = malloc(sizeof(tm_rule));
@@ -27,6 +34,9 @@ tm_rule *new_rule(const char *target, target_list *deps, const char *recipe)
 	return rule;
 }
 
+/* Create a new filename rule.
+ * Makes a copy of its argument.
+ */
 tm_rule *new_filename(const char *target)
 {
 	tm_rule *rule = new_rule(target, NULL, NULL);
@@ -36,6 +46,8 @@ tm_rule *new_filename(const char *target)
 	return rule;
 }
 
+/* Make a copy of a rule.
+ */
 tm_rule *rule_copy(tm_rule *rule)
 {
 	tm_rule *copy;
@@ -69,14 +81,25 @@ tm_rule *rule_copy(tm_rule *rule)
 	return copy;
 }
 
+/* Free a rule */
 void free_rule(tm_rule *rule)
 {
+	if (!rule) return;
 	free(rule->target);
 	free_target_list(rule->deps);
 	free(rule->recipe);
 	free(rule);
 }
 
+
+
+/* Takes the name of a target and another target list and
+ * returns a target list with the target at the head.
+ * Target lists are NULL-terminated.
+ *
+ * e.g., to make a one-element list:
+ *     target_cons("foo", NULL);
+ */
 target_list *target_cons(const char *name, target_list *next)
 {
 	target_list *targets = malloc(sizeof(target_list));
@@ -89,6 +112,8 @@ target_list *target_cons(const char *name, target_list *next)
 	return targets;
 }
 
+/* Frees a target list.
+ */
 void free_target_list(target_list *targets)
 {
 	while (targets) {
@@ -99,15 +124,26 @@ void free_target_list(target_list *targets)
 	}
 }
 
+/* Copy a target list.
+ */
 target_list *target_list_copy(target_list *targets)
 {
-	target_list *rev = target_list_reverse(targets);
-	target_list *copy = target_list_reverse(rev);
+	target_list *rev;
+	target_list *copy;
 
+	if (!targets) return NULL;
+	
+	rev = target_list_reverse(targets);
+	copy = target_list_reverse(rev);
 	free_target_list(rev);
 	return copy;
 }
 
+
+/* Take a rule and another rule list and return
+ * a rule list with the rule at the head.
+ * Rule lists are NULL-terminated.
+ */
 tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next)
 {
 	tm_rule_list *rules = malloc(sizeof(tm_rule_list));
@@ -118,6 +154,8 @@ tm_rule_list *rule_cons(tm_rule *rule, tm_rule_list *next)
 	return rules;
 }
 
+/* Frees a rule list
+ */
 void free_rule_list(tm_rule_list *rules)
 {
 	while (rules) {
@@ -130,6 +168,8 @@ void free_rule_list(tm_rule_list *rules)
 }
 
 
+/* Return 1 if the target is in targets, else return 0.
+ */
 int target_exists(const char *target, target_list *targets)
 {
 	for (; targets; targets = targets->next) {
@@ -142,6 +182,9 @@ int target_exists(const char *target, target_list *targets)
 }
 
 
+/* Take a target and a rule list and return the rule associated
+ * with that target if it exists, otherwise return NULL.
+ */
 tm_rule *find_rule(const char *target, tm_rule_list *rules)
 {
 	tm_rule_list *node = rules;
@@ -159,7 +202,12 @@ tm_rule *find_rule(const char *target, tm_rule_list *rules)
 	return rule;
 }
 
-void find_files_from_deps(target_list *targets, tm_rule_list **rules)
+
+/* Take a list of targets and a pointer to a rule list.
+ * If no rule for a target is found in the rule list, add
+ * a new TM_FILENAME rule to the rule list.
+ */
+static void find_files_from_deps(target_list *targets, tm_rule_list **rules)
 {
 	for (; targets; targets = targets->next) {
 		tm_rule *rule = find_rule(targets->name, *rules);
@@ -185,6 +233,10 @@ void find_files(tm_rule_list **rules)
 	}
 }
 
+
+/* Take a list of targets and a list of rules and return
+ * a list of the rules associated with those targets.
+ */
 tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 {
 	tm_rule_list *mapped = NULL;
@@ -200,6 +252,9 @@ tm_rule_list *find_rules(target_list *targets, tm_rule_list *rules)
 	return mapped;
 }
 
+
+/* Return a new rule list representing the reverse of another rule list
+ */
 tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 {
 	tm_rule_list *rev = NULL;
@@ -212,6 +267,8 @@ tm_rule_list *rule_list_reverse(tm_rule_list *rules)
 	return rev;
 }
 
+/* Return a new target list representing the reverse of another target list
+ */
 target_list *target_list_reverse(target_list *targets)
 {
 	target_list *rev = NULL;
@@ -260,6 +317,9 @@ static int topsort_visit(tm_rule *rule, tm_rule_list *rules, tm_rule_list **sort
 	return 0;
 }
 
+/* Perform a topological sort of the dependency graph to reach target.
+ * Also checks for cycles in the dependency graph.
+ */
 tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 {
 	tm_rule_list *sorted = NULL;
@@ -279,6 +339,9 @@ tm_rule_list *topsort(const char *target, tm_rule_list *rules)
 }
 
 
+/* Return a string representation of a target list.
+ * Consists of all the targets in the list separated by spaces.
+ */
 char *target_list_to_string(target_list *targets)
 {
 	target_list *node = targets;
@@ -307,6 +370,8 @@ char *target_list_to_string(target_list *targets)
 }
 
 
+/* Print a rule list to stdout.
+ */
 void print_rule_list(tm_rule_list *rules)
 {
 	tm_rule_list *node;

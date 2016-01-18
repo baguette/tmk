@@ -13,9 +13,12 @@
 #include "tm_update.h"
 
 
+/* A list of targets that were updated during the current run */
 target_list *updated_targets = NULL;
 
 
+/* Returns true if a file exists and is readable.
+ */
 int file_exists(const char *filename)
 {
 	FILE *fp;
@@ -29,6 +32,10 @@ int file_exists(const char *filename)
 }
 
 
+/* Used takes a Jim interpreter and a Jim error code.
+ * If there was an error, display an error message and exit.
+ * Otherwise, do nothing.
+ */
 void wrap(Jim_Interp *interp, int error)
 {
 	if (error == JIM_ERR) {
@@ -40,6 +47,11 @@ void wrap(Jim_Interp *interp, int error)
 }
 
 
+/* Update a target using the associated rule from tm_rules.
+ * Takes a SQLite database handle representing the sha1sum cache
+ * and the name of the TMakefile being evaluated, along with
+ * the name of the target to update.
+ */
 int update(sqlite3 *db, const char *tmfile, const char *target)
 {
 	unsigned char digest[CRYPTO_HASH_SIZE];
@@ -94,12 +106,18 @@ int update(sqlite3 *db, const char *tmfile, const char *target)
 }
 
 
+/* Return 1 if target was updated, else return 0.
+ */
 int was_updated(const char *target)
 {
 	return target_exists(target, updated_targets);
 }
 
 
+/* Return 1 if a given target is out of date, else return 0.
+ * Takes a SQLite database handle and the name of the TMakefile
+ * being evaluated along with the name of the target.
+ */
 int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 {
 	unsigned char digest[CRYPTO_HASH_SIZE];
@@ -170,6 +188,11 @@ int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 		return 1;
 }
 
+/* Take a list of targets to check and return a sublist containing only
+ * the targets that are out of date.
+ * Takes a SQLite database handle and the name of the TMakefile being
+ * evaluated along with the list of targets.
+ */
 target_list *need_update(sqlite3 *db, const char *tmfile, target_list *targets)
 {
 	target_list *oodate = NULL;
@@ -184,8 +207,15 @@ target_list *need_update(sqlite3 *db, const char *tmfile, target_list *targets)
 }
 
 
-void update_rules(sqlite3 *db,
-                  Jim_Interp *interp,
+/* Update all the rules in sorted_rules that need updating.
+ * Takes a SQLite database handle, a Jim interpreter containing
+ * the recipe definitions, the name of the TMakefile that was
+ * evaluated in the interpreter, the rules to be updated if needed
+ * (in the order they are to be updated), whether or not to force
+ * updates regardless of out-of-date status, and whether or not
+ * we're running in silent mode.
+ */
+void update_rules(sqlite3 *db, Jim_Interp *interp,
                   const char *tmfile,
                   tm_rule_list *sorted_rules,
                   int force,

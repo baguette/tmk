@@ -14,18 +14,22 @@
 #include "tm_ext_cmds.h"
 
 
+/* The default paths to search of include files */
 const char *DEFAULT_INC_PATH[] = {
 	".",
 	TM_PREFIX "/lib/tmake/include",
 	NULL
 };
 
+/* The default path to search for package files */
 const char *DEFAULT_PKG_PATH[] = {
 	".",
 	TM_PREFIX "/lib/tmake/packages",
 	NULL
 };
 
+/* Display usage and exit.
+ */
 static void usage(const char *progname)
 {
 	printf("usage: %s [options] [target]\n", progname);
@@ -49,6 +53,15 @@ static void usage(const char *progname)
 	exit(1);
 }
 
+/* Takes a pointer to the current argv index, argc, and argv.
+ * Checks if the flag is separated from its argument with a space.
+ * If it is, increments the argv index, or else has no effect on
+ * the index.  Returns the argument to the flag if it is available,
+ * or else displays usage and exits.
+ *
+ * e.g., -D NO_BUILD_JIMTCL and -DNO_BUILD_JIMTCL will both yield
+ *       "NO_BUILD_JIMTCL" here.
+ */
 static char *get(int *arg, int argc, char **argv)
 {
 	if (strlen(argv[*arg]) > 2) {
@@ -64,6 +77,10 @@ static char *get(int *arg, int argc, char **argv)
 	return NULL;
 }
 
+/* Register the include paths (specified in more_inc) and package paths
+ * (specified in more_pkg) with the Jim interpreter and the include command
+ * (defined in tm_core_cmds.c).
+ */
 static int register_search_paths(Jim_Interp *interp, target_list *more_inc, target_list *more_pkg)
 {
 	Jim_Obj *inc, *pkg;
@@ -101,6 +118,7 @@ static int register_search_paths(Jim_Interp *interp, target_list *more_inc, targ
 }
 
 
+/* Orchestrate everything! */
 int main(int argc, char **argv)
 {
 	const char *filename = DEFAULT_FILE;
@@ -181,8 +199,7 @@ int main(int argc, char **argv)
 		return (EXIT_FAILURE);
 	}
 
-	/* Register the core Tcl commands */
-	Jim_RegisterCoreCommands(interp);
+	/* Register the core Tcl commands */ Jim_RegisterCoreCommands(interp);
 	tm_RegisterCoreCommands(interp);
 
 	/* Initialize any static extensions */
@@ -337,3 +354,4 @@ int main(int argc, char **argv)
 
 	return retval;
 }
+
