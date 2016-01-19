@@ -17,14 +17,14 @@
 /* The default paths to search of include files */
 const char *DEFAULT_INC_PATH[] = {
 	".",
-	TM_PREFIX "/lib/tmake/include",
+	TM_PREFIX "/lib/tmk/include",
 	NULL
 };
 
 /* The default path to search for package files */
 const char *DEFAULT_PKG_PATH[] = {
 	".",
-	TM_PREFIX "/lib/tmake/packages",
+	TM_PREFIX "/lib/tmk/packages",
 	NULL
 };
 

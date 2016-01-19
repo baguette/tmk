@@ -36,6 +36,6 @@ $MAKE_C_EXT >> tm_ext_cmds.c
 TM_OPSYS=$(uname -s)
 TM_MACHINE_ARCH=$(uname -m)
 
-run $CC -o tmake $CFLAGS -Ijimtcl -Ijimtcl/sqlite3 \
+run $CC -o tmk $CFLAGS -Ijimtcl -Ijimtcl/sqlite3 \
         -DTM_OPSYS="\"$TM_OPSYS\"" -DTM_MACHINE_ARCH="\"$TM_MACHINE_ARCH\"" \
         $C_SRC jimtcl/libjim.a jimtcl/sqlite3/sqlite3.o -lm
