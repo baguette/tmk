@@ -38,7 +38,7 @@ This reference manual makes use of the following terms:
 ## Example
 
 ------------------------------------------------------------------------------
-    param CC = gcc
+    param CC gcc
     rule all {foo}
     rule foo.o {foo.c} {
 		exec $CC -o $TARGET -c $INPUTS
@@ -124,7 +124,7 @@ The resulting targets can then be used as the dependency for another rule that l
 
 ### param
 
-**`param `** *`name = default-value`*
+**`param `** *`name default-value`*
 
 Define a parameter with a default value that may be overridden on the command line or from the environment.  When initializing a parameter, the value is first searched for on the command line, then in the environment (if `-e` was specified), then finally the *`default-value`*.
 
