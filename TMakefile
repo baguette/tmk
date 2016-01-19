@@ -23,7 +23,7 @@ proc make-c-ext {tclfile cfile} {
 	exec {*}$MAKE_C_EXT $tclfile >> $cfile
 }
 
-rule all {tmake}
+rule all {tmk}
 
 if {[defined NO_BUILD_JIMTCL]} {
 	rule jim {}
@@ -53,7 +53,7 @@ rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
 	make-c-ext $INPUTS $TARGET
 }
 
-rule tmake {jim $C_SRC $H_SRC} {
+rule tmk {jim $C_SRC $H_SRC} {
 	global C_SRC
 
 	set OPSYS [tcl::exec uname -s]
@@ -67,7 +67,6 @@ rule tmake {jim $C_SRC $H_SRC} {
 
 
 # ----------------------------------------------------------------------------
-
 set DOCS {jimtcl/Tcl_shipped.html doc/refman.md}
 
 rule doc-html $DOCS {
