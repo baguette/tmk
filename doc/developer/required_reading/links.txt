@@ -4,6 +4,7 @@
 * Portable Make Programming: http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Make
 * FreeBSD's make: http://www.khmere.com/freebsd_book/html/ch01.html
 * NetBSD make: https://wiki.netbsd.org/bsd_make/
+* OpenBSD make: http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/make.1
 * GNU make Manual: http://www.gnu.org/software/make/manual/make.html
 
 # Related tools
