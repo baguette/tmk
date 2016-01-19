@@ -2,7 +2,7 @@
 
 A portable `make` replacement powered by Tcl.
 
-<a href="https://scan.coverity.com/projects/tmake">
+<a href="https://scan.coverity.com/projects/tmk">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/7553/badge.svg"/>
 </a>
