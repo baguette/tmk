@@ -1,5 +1,5 @@
-.Dd $Mdocdate$
-.Dt tmk 1
+.Dd January 19, 2016
+.Dt TMK 1
 .Os
 .Sh NAME
 .Nm tmk
@@ -36,7 +36,7 @@ Add the environment to the search path for parameters.
 Evaluate
 .Ar file
 instead of the default
-.Ar TMakefile
+.Ar TMakefile .
 .It Fl I Ar directory
 Add
 .Ar directory
@@ -68,9 +68,11 @@ without executing any rules.
 Set the parameter
 .Ar PARAM
 to
-.Ar VALUE
+.Ar VALUE ,
 overriding any defaults specified in the TMakefile.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh HISTORY
 .Sy tmk
 was first developed in early 2016 by Cory Burgett and Andre van Schalkwyk,
@@ -80,5 +82,6 @@ utility included with UNIX variants, whose history goes way back.
 .Sh SEE ALSO
 .Bl -hang -compact -width DS
 .It The TMk Reference Manual (refman)
+.It The Jim Tcl User Reference Manual
 .It Xr make 1
 .El
