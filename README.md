@@ -1,6 +1,6 @@
-# tmake
+# TMk
 
-A portable `make` replacement with the full power of Tcl at your fingertips.
+A portable `make` replacement powered by Tcl.
 
 <a href="https://scan.coverity.com/projects/tmake">
   <img alt="Coverity Scan Build Status"

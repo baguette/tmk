@@ -1,7 +1,7 @@
 " Vim syntax file
-" Language:	TMake
+" Language:	TMk
 " Maintainer:   Cory Burgett <cmburget@gmail.com>
-" Based on tmk/Tk Maintained by:
+" Based on Tcl/Tk Maintained by:
 "		Taylor Venable <taylor@metasyntax.net>
 " 		(previously Brett Cannon <brett@python.org>)
 " 		(previously Dean Copsey <copsey@cs.ucdavis.edu>)
@@ -10,7 +10,7 @@
 " Original:	Robin Becker <robin@jessikat.demon.co.uk>
 " Last Change:	2016/01/08 21:25
 " Version:	1.0
-" URL:		https://github.com/baguette/tmake
+" URL:		https://github.com/baguette/tmk
 "
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
@@ -31,7 +31,7 @@ syn keyword tmkCommand		pid proc puts pwd read regexp registry regsub rename ret
 syn keyword tmkCommand		scan seek set socket source split string subst tell time
 syn keyword tmkCommand		trace unknown unload unset update uplevel upvar variable vwait
 
-" TMake-specific commands
+" TMk-specific commands
 syn keyword tmkCommand		rule param target make commands exists defined
 syn keyword tmkCommand		empty tcl::exec include sub replace-ext
 
@@ -51,7 +51,7 @@ syn keyword tmkVars		tmk_platform tmk_precision tmk_rcFileName tmk_traceCompile
 syn keyword tmkVars		tmk_traceExec tmk_wordchars tmk_nonwordchars tmk_version argc argv
 syn keyword tmkVars		argv0 tmk_interactive geometry
 
-" Additional variables used by TMake
+" Additional variables used by TMk
 syn keyword tmkVars		TARGET INPUTS OODATE TM_PARAM TM_INCLUDE_PATH TM_CURRENT_GOAL
 
 " Strings which expr accepts as boolean values, aside from zero / non-zero.
@@ -199,6 +199,6 @@ endif
   delcommand HiLink
 endif
 
-let b:current_syntax = "tmake"
+let b:current_syntax = "tmk"
 
 " vim: ts=8 noet
