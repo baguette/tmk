@@ -147,7 +147,7 @@ rule tmk {jim sqlite3.o $C_SRC $H_SRC} {
 # ----------------------------------------------------------------------------
 set DOCS {jimtcl/Tcl_shipped.html doc/refman.md}
 
-rule doc-html {$DOCS template.html} {
+rule doc-html {$DOCS doc/template.html} {
 	file copy -force jimtcl/Tcl_shipped.html doc/Jim_Tcl.html
 	exec pandoc -S -s --toc --template=./doc/template.html \
 	       -f markdown_github -t html -o doc/refman.html doc/refman.md
