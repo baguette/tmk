@@ -1,67 +1,153 @@
 param CC gcc
 param CFLAGS "-g -O2 -ansi -Wall -Wextra"
 
-param MAKE_C_EXT "jimtcl/jimsh jimtcl/make-c-ext.tcl"
+param JIM_CFLAGS [options { -D_GNU_SOURCE
+                            -Wall
+                            -I.
+                            -g
+                            -O2
+                            -fno-unwind-tables
+                            -fno-asynchronous-unwind-tables
+                          }]
 
-param JIMFLAGS [options { --disable-lineedit
-                          --math
-                          --disable-docs
-                          --without-ext="eventloop history load syslog"
-                          --with-ext="binary tclprefix"
-                        }]
+param JIM_STATIC_EXTS [list aio array clock exec file namespace pack \
+                            package posix readdir regexp signal tclprefix \
+                            binary glob nshelper oo stdlib tclcompat tree \
+                      ]
+
+param SQLITE_CFLAGS [options { -DSQLITE_OMIT_LOAD_EXTENSION=1
+                               -DSQLITE_THREADSAFE=0
+                               -DSQLITE_DEFAULT_FILE_FORMAT=4
+                               -DSQLITE_ENABLE_STAT3
+                               -DSQLITE_ENABLE_LOCKING_STYLE=0
+                               -DSQLITE_OMIT_INCRBLOB
+                             }]
+
+param TCL "jimsh0"
+param MAKE_C_EXT "make-c-ext.tcl"
+param MAKE_LOAD_STATIC_EXTS "make-load-static-exts.tcl"
 
 proc cc args {
-	global CC CFLAGS
+	global CC
 
-	exec $CC {*}$CFLAGS {*}$args
+	exec $CC {*}$args
 }
 
-proc make-c-ext {tclfile cfile} {
-	global MAKE_C_EXT
+proc tclgen {script tclfile cfile} {
+	global TCL
+
+	set tcl ""
+	if {![file exists $TCL]} {
+		set tcl "jimtcl/$TCL"
+	} else {
+		set tcl "./$TCL"
+	}
+
+	set cmd $script
+	if {![file exists $script]} {
+		set cmd "jimtcl/$script"
+	}
 
 	exec -flags @ echo "#define JIM_EMBEDDED" > $cfile
-	exec {*}$MAKE_C_EXT $tclfile >> $cfile
+	exec $tcl $cmd {*}$tclfile >> $cfile
+}
+
+proc in-dir {dir files} {
+	set newfiles {}
+	foreach f $files {
+		lappend newfiles [file join $dir $f]
+	}
+	return $newfiles
 }
 
 rule all {tmk}
 
+set JIM_CSRC {_load-static-exts.c jim-subcmd.c jim-interactive.c jim-format.c
+              jim.c utf8.c jimregexp.c jim-aio.c jim-array.c jim-clock.c
+              jim-exec.c jim-file.c jim-namespace.c jim-pack.c jim-package.c
+              jim-posix.c jim-readdir.c jim-regexp.c jim-signal.c
+              jim-tclprefix.c _binary.c _glob.c _nshelper.c _oo.c _stdlib.c
+              _tclcompat.c _tree.c}
+
+set JIM_TCLSRC {binary.tcl glob.tcl nshelper.tcl oo.tcl stdlib.tcl
+                tclcompat.tcl tree.tcl initjimsh.tcl}
+
+set JIMSH_SRC {jimsh.c _initjimsh.c}
+
 if {[defined NO_BUILD_JIMTCL]} {
 	rule jim {}
 } else {
-	rule jim {} {
-		global CC
-		global JIMFLAGS
-	
-		cd jimtcl
-		exec ./configure {*}$JIMFLAGS
-		exec make
-		
-		cd sqlite3
-		exec $CC -o sqlite3.o -c sqlite3.c \
-		   -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_THREADSAFE=0 \
-		   -DSQLITE_DEFAULT_FILE_FORMAT=4 -DSQLITE_ENABLE_STAT3 \
-		   -DSQLITE_ENABLE_LOCKING_STYLE=0 -DSQLITE_OMIT_INCRBLOB
-	
-		cd ../..
+	rule jim_bootstrap {[in-dir jimtcl/autosetup jimsh0.c]} {
+		global JIM_CFLAGS
+		cc -o jimtcl/jimsh0 $INPUTS 2>/dev/null
 	}
+
+	rule jim_exts {jim_bootstrap [in-dir jimtcl $JIM_TCLSRC]} {
+		global JIM_TCLSRC MAKE_C_EXT
+
+		cd jimtcl
+		foreach tclfile $JIM_TCLSRC {
+			tclgen $MAKE_C_EXT $tclfile _[replace-ext $tclfile .tcl .c]
+		}
+		cd ..
+	}
+
+	rule _load-static-exts.c {jim_exts} {
+		global MAKE_LOAD_STATIC_EXTS JIM_STATIC_EXTS
+		
+		cd jimtcl
+		tclgen $MAKE_LOAD_STATIC_EXTS $JIM_STATIC_EXTS _load-static-exts.c
+		cd ..
+	}
+
+	rule jim_lib {jim_exts _load-static-exts.c [in-dir jimtcl $JIM_CSRC]} {
+		global JIM_CSRC JIM_CFLAGS
+
+		cd jimtcl
+		foreach cfile $JIM_CSRC {
+			cc {*}$JIM_CFLAGS -o [replace-ext $cfile .c .o] -c $cfile
+		}
+
+		exec ar cr libjim.a {*}[replace-ext $JIM_CSRC .c .o]
+		exec ranlib libjim.a
+
+		cd ..
+	}
+
+	rule jimsh {jim_lib [in-dir jimtcl $JIMSH_SRC]} {
+		global JIMSH_SRC JIM_CFLAGS
+
+		cd jimtcl
+		cc {*}$JIM_CFLAGS -o $TARGET {*}$JIMSH_SRC libjim.a -lm
+		cd ..
+	}
+
+	rule jim {jimsh}
 }
+
+rule sqlite3.o {[in-dir jimtcl/sqlite3 sqlite3.c]} {
+	global CC SQLITE_CFLAGS
+	cc -o $TARGET -c $INPUTS {*}$SQLITE_CFLAGS
+}
+
 
 set H_SRC "tmake.h tm_crypto.h tm_target.h tm_update.h tm_core_cmds.h tm_ext_cmds.h"
 set C_SRC "tmake.c tm_crypto.c tm_target.c tm_update.c tm_core_cmds.c tm_ext_cmds.c"
 
 rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
-	make-c-ext $INPUTS $TARGET
+	global MAKE_C_EXT
+	tclgen $MAKE_C_EXT $INPUTS $TARGET
 }
 
-rule tmk {jim $C_SRC $H_SRC} {
-	global C_SRC
+rule tmk {jim sqlite3.o $C_SRC $H_SRC} {
+	global C_SRC CFLAGS
 
 	set OPSYS [tcl::exec uname -s]
 	set ARCH  [tcl::exec uname -m]
 
-	cc -o $TARGET -Ijimtcl -Ijimtcl/sqlite3 \
+	cc {*}$CFLAGS -o $TARGET -Ijimtcl -Ijimtcl/sqlite3 \
 	   -DTM_OPSYS="$OPSYS" -DTM_MACHINE_ARCH="$ARCH" \
-	   {*}$C_SRC jimtcl/libjim.a jimtcl/sqlite3/sqlite3.o -lm
+	   {*}$C_SRC jimtcl/libjim.a sqlite3.o -lm
 }
 
 
