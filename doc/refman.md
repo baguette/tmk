@@ -190,6 +190,18 @@ Takes a list of filenames and returns a list of filenames where all filenames in
 
     set O_FILES [replace-ext [glob *.c] .c .o]
 
+### in-dir
+
+**`in-dir `** *`directory file-list`*
+
+Takes a list of filenames and returns another list of filenames with `directory` prepended to the paths.
+
+#### Example
+
+    rule foo {[in-dir foo [glob *.c]]} {
+        cc -o $TARGET $INPUTS
+    }
+
 
 
 ## Predefined global variables

@@ -65,6 +65,7 @@ run $CC -o sqlite3.o -c jimtcl/sqlite3/sqlite3.c \
     -DSQLITE_DEFAULT_FILE_FORMAT=4 -DSQLITE_ENABLE_STAT3 \
     -DSQLITE_ENABLE_LOCKING_STYLE=0 -DSQLITE_OMIT_INCRBLOB
 
+# Build TMk
 C_SRC="tmake.c tm_crypto.c tm_target.c tm_update.c tm_core_cmds.c tm_ext_cmds.c"
 
 MAKE_C_EXT="jimtcl/jimsh jimtcl/make-c-ext.tcl tm_ext_cmds.tcl"

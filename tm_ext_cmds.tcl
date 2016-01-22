@@ -175,3 +175,12 @@ proc sub {from to recipe} {
 	return $OUT
 }
 
+# Create a list of filenames with dir prepended to a given list of filenames
+proc in-dir {dir files} {
+	set newfiles {}
+	foreach f $files {
+		lappend newfiles [file join $dir $f]
+	}
+	return $newfiles
+}
+

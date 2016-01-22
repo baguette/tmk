@@ -52,14 +52,6 @@ proc tclgen {script tclfile cfile} {
 	exec $tcl $cmd {*}$tclfile >> $cfile
 }
 
-proc in-dir {dir files} {
-	set newfiles {}
-	foreach f $files {
-		lappend newfiles [file join $dir $f]
-	}
-	return $newfiles
-}
-
 rule all {tmk}
 
 set JIM_CSRC {_load-static-exts.c jim-subcmd.c jim-interactive.c jim-format.c
@@ -156,7 +148,7 @@ rule tmk {jim sqlite3.o $C_SRC $H_SRC} {
 set DOCS {jimtcl/Tcl_shipped.html doc/refman.md}
 
 rule doc-html $DOCS {
-	file copy jimtcl/Tcl_shipped.html doc/Jim_Tcl.html
+	file copy -force jimtcl/Tcl_shipped.html doc/Jim_Tcl.html
 	exec pandoc -f markdown_github -t html -o doc/refman.html doc/refman.md
 }
 
