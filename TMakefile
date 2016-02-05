@@ -27,6 +27,9 @@ param TCL "jimsh0"
 param MAKE_C_EXT "make-c-ext.tcl"
 param MAKE_LOAD_STATIC_EXTS "make-load-static-exts.tcl"
 
+param PREFIX "/usr/local"
+param DESTDIR ""
+
 proc cc args {
 	global CC
 
@@ -154,6 +157,21 @@ rule tmk {config.h jim sqlite3.o $C_SRC $H_SRC} {
 
 
 
+rule install {all} {
+	global PREFIX DESTDIR
+	param BINDIR "$PREFIX/bin"
+	#param LIBDIR "$PREFIX/lib"
+	param MANDIR "$PREFIX/share/man"
+
+	file mkdir "$DESTDIR/$BINDIR"
+	#file mkdir "$DESTDIR/$LIBDIR"
+	file mkdir "$DESTDIR/$MANDIR/man1"
+
+	exec install -m 755 tmk "$DESTDIR/$BINDIR"
+	exec install -m 644 doc/tmk.1 "$DESTDIR/$MANDIR/man1"
+}
+
+
 # ----------------------------------------------------------------------------
 set DOCS {jimtcl/Tcl_shipped.html doc/refman.md}
 
@@ -170,6 +188,16 @@ rule doc-pdf $DOCS {
 }
 
 rule doc-all {doc-html doc-pdf}
+
+rule install-doc {doc-all} {
+	global PREFIX DESTDIR
+	param DOCDIR "$PREFIX/share/doc/tmk"
+
+	file mkdir "$DESTDIR/$DOCDIR"
+
+	exec install -m 644 doc/*.html "$DESTDIR/$DOCDIR"
+	exec install -m 644 doc/*.pdf "$DESTDIR/$DOCDIR"
+}
 
 #-----------------------------------------------------------------------------
 
