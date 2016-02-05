@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "tm_crypto.h"
+#include "config.h"      /* for WORD */
 
 
 /****************************** MACROS ******************************/
@@ -25,7 +26,6 @@
 
 /**************************** DATA TYPES ****************************/
 typedef unsigned char BYTE;
-typedef unsigned int  WORD;
 
 typedef struct {
 	BYTE data[64];

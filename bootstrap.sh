@@ -19,6 +19,29 @@ rootname() {
 	echo "$1" |sed 's/\(.*\)\.[^\.]*$/\1/'
 }
 
+CHECKS="wordsize"
+# Do some configure-style checks needed for the SHA-1 code
+( cd build/checks;
+  for check in $CHECKS; do
+    $CC -o $check $check.c
+  done
+)
+
+echo -n "Checking for word type... "
+WORDTYPE="$(build/checks/wordsize)"
+if [ $? -eq 1 ]; then
+	echo UNKNOWN
+	echo "ERROR:  Unable to determine word type"
+	exit 1
+fi
+echo "$WORDTYPE"
+
+if [ -f config.h ]; then
+	rm -f config.h
+fi
+
+echo "typedef $WORDTYPE WORD;" >> config.h
+
 JIM_CSRC="_load-static-exts.c jim-subcmd.c jim-interactive.c jim-format.c
          jim.c utf8.c jimregexp.c jim-aio.c jim-array.c jim-clock.c
          jim-exec.c jim-file.c jim-namespace.c jim-pack.c jim-package.c

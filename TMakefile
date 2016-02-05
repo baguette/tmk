@@ -122,6 +122,16 @@ rule sqlite3.o {[in-dir jimtcl/sqlite3 sqlite3.c]} {
 	cc -o $TARGET -c $INPUTS {*}$SQLITE_CFLAGS
 }
 
+rule config.h {[glob build/checks/*.c]} {
+	foreach i [glob build/checks/*.c] {
+		cc -o [file rootname $i] $i
+	}
+
+	set TM_WORD [tcl::exec build/checks/wordsize]
+
+	tcl::exec echo "typedef $TM_WORD WORD;"  > config.h
+}
+
 
 set H_SRC "tmake.h tm_crypto.h tm_target.h tm_update.h tm_core_cmds.h tm_ext_cmds.h"
 set C_SRC "tmake.c tm_crypto.c tm_target.c tm_update.c tm_core_cmds.c tm_ext_cmds.c"
@@ -131,7 +141,7 @@ rule tm_ext_cmds.c {tm_ext_cmds.tcl} {
 	tclgen $MAKE_C_EXT $INPUTS $TARGET
 }
 
-rule tmk {jim sqlite3.o $C_SRC $H_SRC} {
+rule tmk {config.h jim sqlite3.o $C_SRC $H_SRC} {
 	global C_SRC CFLAGS
 
 	set OPSYS [tcl::exec uname -s]
