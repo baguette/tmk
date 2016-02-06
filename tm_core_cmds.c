@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE   /* needed for strdup */
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>   /* TODO: I doubt this works on Windows... */
@@ -14,7 +16,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	tm_rule *rule = NULL;
 	target_list *deps = NULL;
 	Jim_Obj *target_subst, *deps_subst;
-	const char *recipe = NULL;
+	char *recipe = NULL;
 	int i, numtargs, numdeps;
 	const char *fmt = "proc recipe::%s {TARGET INPUTS OODATE} { \
 	%s\
@@ -31,7 +33,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 	/* If we've got a recipe, store it */
 	if (argc == 4) {
-		recipe = Jim_String(argv[3]);
+		recipe = strdup(Jim_String(argv[3]));
 	}
 
 	/* Perform variable substitution in the dependency lists */
@@ -56,7 +58,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	numtargs = Jim_ListLength(interp, target_subst);
 
 	if (numtargs == 0) {
-		fprintf(stderr, "ERROR: no targets specified for rule\n");
+		Jim_SetResultString(interp, "No targets specified for rule", -1);
 		free(deps);
 		return (JIM_ERR);
 	}
@@ -69,15 +71,16 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 		/* check if there's already a rule for this target */
 		rule = find_rule(target, tm_rules);
 		if (rule) {
-			/* if so, overwrite it with the new rule */
-			free_target_list(rule->deps);
-			free(rule->recipe);
-			rule->deps = target_list_copy(deps);
-			if (recipe) {
-				rule->recipe = malloc(strlen(recipe) + 1);
-				strcpy(rule->recipe, recipe);
-			} else {
-				rule->recipe = NULL;
+			target_list *node;
+			/* if so, add new dependencies */
+			if (recipe && rule->recipe) {
+				Jim_SetResultFormatted(interp, "Multiple recipes defined for target %s", rule->target);
+				return (JIM_ERR);
+			} else if (recipe) {
+				rule->recipe = recipe;
+			}
+			for (node = deps; node; node = node->next) {
+				rule->deps = target_cons(node->name, rule->deps);
 			}
 			rule->type = TM_EXPLICIT;
 		} else {
@@ -103,15 +106,17 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 				goto error;
 			}
 		}
-
-		/* Create a proc representing this rule */
-		len = strlen(fmt) + strlen(target) + (recipe ? strlen(recipe) : 0) + 1;
-		cmd = malloc(len);
-		sprintf(cmd, fmt, target, recipe ? recipe : "");
-		ret = Jim_Eval(interp, cmd);
-		free(cmd);
-		if (ret != (JIM_OK)) {
-			goto error;
+		
+		if (recipe) {
+			/* Create a proc representing this rule */
+			len = strlen(fmt) + strlen(target) + strlen(recipe) + 1;
+			cmd = malloc(len);
+			sprintf(cmd, fmt, target, recipe);
+			ret = Jim_Eval(interp, cmd);
+			free(cmd);
+			if (ret != (JIM_OK)) {
+				goto error;
+			}
 		}
 	}
 

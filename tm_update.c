@@ -250,6 +250,7 @@ void update_rules(sqlite3 *db, Jim_Interp *interp,
 
 				if (!silence)
 					printf("Making target %s:\n", rule->target);
+
 				len = strlen(fmt) + strlen(target)*2 + strlen(inputs) + strlen(oodate) + 1;
 				cmd = malloc(len);
 				sprintf(cmd, fmt, target, target, inputs, oodate);
