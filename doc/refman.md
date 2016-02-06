@@ -98,9 +98,15 @@ The following rule variables are available in recipes:
 * `INPUTS`: The full list of target dependencies.
 * `OODATE`: The list of dependencies that have been deemed out of date by TMk.
 
-After a rule has been defined for a target, any subsequent rules defined for that same target will silently overwrite the previous rule.
+After a rule has been defined for a target, any subsequent rules defined for that same target will add their dependencies to the existing rule(s).  It is an error to provide more than one recipe for a target.
 
 Recipes are scoped the same way `proc` bodies are.  That means global variables need to be declared with the `global` command before they can be referenced, just as with `proc`.
+
+### rule!
+
+**`rule! `** *`target-list dependency-list ?recipe?`*
+
+Works exactly like `rule`, but targets defined with `rule!` are always considered out of date.  This is useful for certain traditional targets like `clean` and `install` that always need to be constructed.
 
 ### sub
 
