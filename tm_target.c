@@ -78,6 +78,7 @@ tm_rule *rule_copy(tm_rule *rule)
 	}
 	copy->type = rule->type;
 	copy->mark = rule->mark;
+	copy->always_oodate = rule->always_oodate;
 
 	return copy;
 }
@@ -401,6 +402,9 @@ void print_rule_list(tm_rule_list *rules)
 		}
 		if (node->rule->recipe) {
 			printf("(recipe)");
+		}
+		if (node->rule->always_oodate) {
+			printf("(always)");
 		}
 		printf("\n");
 	}
