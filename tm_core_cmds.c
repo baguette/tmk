@@ -21,6 +21,7 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	const char *fmt = "proc recipe::%s {TARGET INPUTS OODATE} { \
 	%s\
 	}";
+	unsigned char always_oodate = 0;
 	int len = 0;
 	char *cmd = NULL;
 	int ret = JIM_ERR;
@@ -29,6 +30,10 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	if (argc < 3 || argc > 4) {
 		Jim_WrongNumArgs(interp, 2, argv, "rule target-list dep-list ?script?");
 		return (JIM_ERR);
+	}
+
+	if (strcmp(Jim_String(argv[0]), "rule!") == 0) {
+		always_oodate = 1;
 	}
 
 	/* If we've got a recipe, store it */
@@ -83,9 +88,13 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 				rule->deps = target_cons(node->name, rule->deps);
 			}
 			rule->type = TM_EXPLICIT;
+			if (rule->always_oodate != always_oodate) {
+				rule->always_oodate = always_oodate;
+			}
 		} else {
 			/* or else create a new rule */
 			rule = new_rule(target, deps, recipe);
+			rule->always_oodate = always_oodate;
 			tm_rules = rule_cons(rule, tm_rules);
 			free_rule(rule);
 		}
@@ -268,6 +277,7 @@ static int includeCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 void tm_RegisterCoreCommands(Jim_Interp *interp)
 {
 	Jim_CreateCommand(interp, "rule", ruleCmd, NULL, NULL);
+	Jim_CreateCommand(interp, "rule!", ruleCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "include", includeCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "target", targetCmd, NULL, NULL);
 	Jim_CreateCommand(interp, "commands", commandsCmd, NULL, NULL);

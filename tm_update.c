@@ -136,6 +136,10 @@ int needs_update(sqlite3 *db, const char *tmfile, const char *target)
 		goto yes;
 	}
 
+	if (rule->always_oodate) {
+		goto yes;
+	}
+
 	for (deps = rule->deps; deps; deps = deps->next) {
 		if (was_updated(deps->name)) {
 			goto yes;

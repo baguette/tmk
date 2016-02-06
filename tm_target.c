@@ -30,6 +30,7 @@ tm_rule *new_rule(const char *target, target_list *deps, const char *recipe)
 		rule->recipe = NULL;
 	rule->type = TM_EXPLICIT;
 	rule->mark = TM_UNMARKED;
+	rule->always_oodate = 0;
 
 	return rule;
 }

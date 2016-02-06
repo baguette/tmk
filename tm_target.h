@@ -20,6 +20,7 @@ typedef struct tm_rule {
 	char *recipe;
 	unsigned char type;
 	unsigned char mark;
+	unsigned char always_oodate;
 } tm_rule;
 
 typedef struct target_list {
