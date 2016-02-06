@@ -160,7 +160,7 @@ rule tmk {config.h jim sqlite3.o $C_SRC $H_SRC} {
 rule! install {all} {
 	global PREFIX DESTDIR
 	param BINDIR "$PREFIX/bin"
-	#param LIBDIR "$PREFIX/lib"
+	#param LIBDIR "$PREFIX/lib/tmk"
 	param MANDIR "$PREFIX/share/man"
 
 	file mkdir "$DESTDIR/$BINDIR"
