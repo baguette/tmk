@@ -35,7 +35,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	/* Perform variable substitution in the dependency lists */
-	Jim_SubstObj(interp, argv[2], &deps_subst, 0);
+	if (Jim_SubstObj(interp, argv[2], &deps_subst, 0) != JIM_OK) {
+		return (JIM_ERR);
+	}
 
 	/* Get all the dependencies and store them in a dep list */
 	numdeps = Jim_ListLength(interp, deps_subst);
@@ -47,7 +49,9 @@ static int ruleCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 	}
 
 	/* Perform variable substitution in the target list */
-	Jim_SubstObj(interp, argv[1], &target_subst, 0);
+	if (Jim_SubstObj(interp, argv[1], &target_subst, 0) != JIM_OK) {
+		return (JIM_ERR);
+	}
 
 	numtargs = Jim_ListLength(interp, target_subst);
 
