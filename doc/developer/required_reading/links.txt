@@ -14,4 +14,5 @@
 * Rake - Ruby Make: http://rake.rubyforge.org/
 * SCons: http://www.scons.org/
 * autosetup - Tcl-based autoconf replacement: https://msteveb.github.io/autosetup/
+* tup - a make replacement that uses Lua: http://gittup.org/tup/
 
