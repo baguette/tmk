@@ -67,8 +67,10 @@ JIM_STATIC_EXTS="aio array clock exec file namespace pack
 # Add a link to jimsh0 in the autosetup directory
 # so that the configure script doesn't build it again'
 ( cd jimtcl/autosetup;
-  run $CC -o ../jimsh0 jimsh0.c 2>/dev/null
-  ln -s $(dirname ../jimsh0) jimsh0
+  run $CC -o ../jimsh0 jimsh0.c 2>/dev/null;
+  if [ ! -e jimsh0 ]; then
+    ln -s $(dirname ../jimsh0) jimsh0
+  fi
 )
 
 # Build the real JimTcl interpreter and library
@@ -95,7 +97,7 @@ JIM_STATIC_EXTS="aio array clock exec file namespace pack
     run $CC $JIM_CFLAGS -o $(rootname $cfile).o -c $cfile;
   done;
 
-  run $AR cq libjim.a $JIM_OBJS;
+  run $AR cr libjim.a $JIM_OBJS;
   run $RANLIB libjim.a
 )
 
